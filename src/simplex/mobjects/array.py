@@ -10,6 +10,8 @@ Vanilla Manim mobjects. No factories; no wrapping. Authors construct directly::
     self.play(arr.swap(1, 3))
 """
 
+from __future__ import annotations
+
 from typing import Any, cast
 
 import numpy as np

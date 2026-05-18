@@ -30,8 +30,9 @@ def test_bounding_box_with_center_adds_one_dot() -> None:
 def test_bounding_box_always_returns_redrawn_mob() -> None:
     sq = Square(side_length=1.0)
     bb = bounding_box(sq, always=True)
-    # always_redraw returns a Mobject that has updaters attached.
-    assert bb.has_updaters() or bb.updaters
+    # always_redraw returns a Mobject with updaters attached. Manim 0.20
+    # removed `has_updaters()` -- read the attribute directly.
+    assert bool(bb.updaters)
 
 
 def test_indexx_labels_cycles_colors() -> None:

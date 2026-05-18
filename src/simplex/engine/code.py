@@ -4,11 +4,14 @@ Wraps :class:`manim.Code` (the Pygments-backed listing) and exposes its
 ``code_lines`` attribute through small animation helpers.
 """
 
+from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Any
 
 from manim import (
     RIGHT,
     SMALL_BUFF,
+    Animation,
     AnimationGroup,
     Brace,
     Code,
@@ -23,7 +26,25 @@ from manim import (
 from simplex.theme.context import get_active_theme
 from simplex.theme.pygments_style import DarculaStyle, register_darcula
 
-__all__ = ["DarculaStyle", "register_darcula"]
+__all__ = ["DarculaStyle", "HighlightResult", "register_darcula"]
+
+
+@dataclass(frozen=True)
+class HighlightResult:
+    """Return value of :func:`highlight_code_lines`.
+
+    ``fade`` is always present. ``indicate`` is ``None`` when the caller
+    passed ``indicate=False``. Iterable so the prior tuple-style call
+    ``self.play(*highlight_code_lines(...))`` keeps working.
+    """
+
+    fade: AnimationGroup
+    indicate: Indicate | None = None
+
+    def __iter__(self) -> Iterator[Animation]:
+        yield self.fade
+        if self.indicate is not None:
+            yield self.indicate
 
 
 def code_block(
@@ -36,10 +57,11 @@ def code_block(
     background_config: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> Code:
-    """Build a `manim.Code` with Darcula highlighting and the theme mono font.
+    """Build a ``manim.Code`` with Darcula highlighting and the theme mono font.
 
-    Authors get vanilla `manim.Code` back -- everything Manim does to that
-    class still works (`.code_lines`, `.background`, `.scale_to_fit_width`).
+    Authors get vanilla ``manim.Code`` back -- everything Manim does to
+    that class still works (``.code_lines``, ``.background``,
+    ``.scale_to_fit_width``).
     """
     if formatter_style == "darcula":
         register_darcula(formatter_style)
@@ -64,16 +86,21 @@ def highlight_code_lines(
     off_opacity: float = 0.5,
     indicate: bool = True,
     **kwargs: Any,
-) -> AnimationGroup | tuple[AnimationGroup, Indicate]:
-    """Dim non-selected lines; optionally `Indicate` the selected ones.
+) -> HighlightResult:
+    """Dim non-selected lines; optionally ``Indicate`` the selected ones.
 
     Line numbers are **1-based** to match what users see on screen.
+
+    Returns a :class:`HighlightResult` with ``fade`` (always an
+    ``AnimationGroup``) and ``indicate`` (an ``Indicate`` instance when
+    ``indicate=True``, otherwise ``None``). Iterate to splat into
+    ``self.play(*result)``.
     """
     code_lines = code.code_lines
     selected = set(range(1, len(code_lines) + 1)) if lines is None else set(lines)
 
-    fade_anims = []
-    indicated = []
+    fade_anims: list[Animation] = []
+    indicated: list[Any] = []
     for line_no, line in enumerate(code_lines, start=1):
         if line_no in selected:
             fade_anims.append(line.animate.set_fill(opacity=1.0))
@@ -83,9 +110,12 @@ def highlight_code_lines(
             fade_anims.append(line.animate.set_fill(opacity=off_opacity))
 
     fade_group = AnimationGroup(*fade_anims, **kwargs)
-    if indicate:
-        return fade_group, Indicate(VGroup(*indicated), **kwargs)
-    return fade_group
+    if not indicate:
+        return HighlightResult(fade=fade_group)
+    return HighlightResult(
+        fade=fade_group,
+        indicate=Indicate(VGroup(*indicated), **kwargs),
+    )
 
 
 def code_explain(
@@ -111,14 +141,14 @@ def code_explain(
     brace = Brace(target, RIGHT, buff=buff, color=color)
     label = Text(explanation, color=color).scale(scale).next_to(brace, RIGHT, buff=buff)
 
-    fade = highlight_code_lines(
+    highlight = highlight_code_lines(
         code,
         lines=lines,
         off_opacity=off_opacity,
         indicate=False,
     )
     return VGroup(brace, label), AnimationGroup(
-        fade,
+        highlight.fade,
         GrowFromCenter(brace),
         Write(label),
         lag_ratio=kwargs.pop("lag_ratio", 1.0),
@@ -132,10 +162,10 @@ def transform_code_lines(
     mapping: dict[int, int],
     **kwargs: Any,
 ) -> AnimationGroup:
-    """`TransformMatchingShapes` between matching (1-based) line numbers.
+    """``TransformMatchingShapes`` between matching (1-based) line numbers.
 
-    ``mapping`` is ``{src_line_no: dst_line_no}``. Multiple source lines may
-    map to the same destination line (they merge into it).
+    ``mapping`` is ``{src_line_no: dst_line_no}``. Multiple source lines
+    may map to the same destination line (they merge into it).
     """
     src_lines = src.code_lines
     dst_lines = dst.code_lines

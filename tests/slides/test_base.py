@@ -1,0 +1,83 @@
+"""BaseSlide section-type resolution -- no auto-promotion, fail-loudly path.
+
+Tests the ``_resolve_section_type`` method directly via a minimal stub
+holding the only state it reads (``_current_main``). This isolates the
+resolution logic from manim-slides' ``Slide`` machinery (no Scene init,
+no renderer, no file output).
+"""
+
+import pytest
+
+pytest.importorskip("manim")
+pytest.importorskip("manim_slides")
+
+from simplex.section import SimplexSectionType
+from simplex.slides.base import BaseSlide
+
+
+class _MiniSlide:
+    """Holds ``_current_main`` and borrows BaseSlide's resolver."""
+
+    _resolve_section_type = BaseSlide._resolve_section_type
+
+    def __init__(self) -> None:
+        self._current_main: str | None = None
+
+
+def _resolve(
+    stub: _MiniSlide,
+    name: str | None,
+    section_type: SimplexSectionType | str | None = None,
+    loop: bool = False,
+) -> SimplexSectionType:
+    return stub._resolve_section_type(name, section_type, loop)
+
+
+def test_named_call_emits_main() -> None:
+    stub = _MiniSlide()
+    assert _resolve(stub, "Theorem") is SimplexSectionType.MAIN
+
+
+def test_named_call_with_loop_emits_main_loop() -> None:
+    stub = _MiniSlide()
+    assert _resolve(stub, "Theorem", loop=True) is SimplexSectionType.MAIN_LOOP
+
+
+def test_bare_call_after_named_emits_sub() -> None:
+    stub = _MiniSlide()
+    stub._current_main = "Theorem"
+    assert _resolve(stub, None) is SimplexSectionType.SUB
+
+
+def test_bare_call_after_named_with_loop_emits_sub_loop() -> None:
+    stub = _MiniSlide()
+    stub._current_main = "Theorem"
+    assert _resolve(stub, None, loop=True) is SimplexSectionType.SUB_LOOP
+
+
+def test_bare_first_call_raises_with_actionable_message() -> None:
+    stub = _MiniSlide()
+    with pytest.raises(RuntimeError) as exc:
+        _resolve(stub, None)
+    msg = str(exc.value)
+    assert "first call must carry a name=" in msg
+    assert "_MiniSlide" in msg
+
+
+def test_explicit_section_type_overrides_inference() -> None:
+    stub = _MiniSlide()
+    out = _resolve(stub, "Title", section_type=SimplexSectionType.SUB_SKIP)
+    assert out is SimplexSectionType.SUB_SKIP
+
+
+def test_explicit_section_type_as_string_works() -> None:
+    stub = _MiniSlide()
+    out = _resolve(stub, "Title", section_type="simplex.main.skip")
+    assert out is SimplexSectionType.MAIN_SKIP
+
+
+def test_explicit_section_type_works_even_without_current_main() -> None:
+    """An explicit section_type kwarg should bypass the 'name required' check."""
+    stub = _MiniSlide()
+    out = _resolve(stub, None, section_type=SimplexSectionType.SUB)
+    assert out is SimplexSectionType.SUB
