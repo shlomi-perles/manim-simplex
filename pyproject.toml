@@ -1,0 +1,46 @@
+[project]
+name = "manim-simplex"
+version = "0.2.0"
+description = "Manim plugin: theme tokens, mobjects, slide hierarchy."
+readme = "README.md"
+requires-python = ">=3.14"
+license = { text = "MIT" }
+authors = [{ name = "Shlomi Perles" }]
+dependencies = [
+    "manim>=0.20.1",
+    "manim-slides>=5.1.7",
+    "pydantic>=2.7",
+    "pygments>=2.18",
+]
+
+[project.entry-points."manim.plugins"]
+simplex = "simplex.plugin:activate"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "syrupy>=4.6",
+    "ruff>=0.6",
+    "basedpyright>=1.13",
+    "pre-commit>=3.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/simplex"]
+
+[tool.basedpyright]
+include = ["src", "tests"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
