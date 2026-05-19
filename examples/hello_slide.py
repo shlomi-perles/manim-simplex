@@ -2,14 +2,16 @@
 
 Demonstrates:
 - `BaseSlide.next_slide()` -- first bare call auto-promotes to a main
-  slide named after the scene class. Pass ``name=`` to override the name.
+  slide named after the scene class with spaces between PascalCase
+  boundaries (``HelloSlide`` -> ``"Hello Slide"``). Pass ``name=`` to
+  override the name.
 - `BaseSlide.next_slide()` -- subsequent bare call -> sub-stop of the
   current main (RevealJS vertical navigation).
-- `region.place(...)` to position via anchor.
+- `region.place(...)` to position via a Manim direction vector.
 - `Region` body shrunk by `make_chrome` for a clean header + body band.
 """
 
-from manim import MathTex, Write
+from manim import ORIGIN, MathTex, Write
 
 from simplex.slides import BaseSlide, make_chrome
 from simplex.theme import presets
@@ -24,11 +26,11 @@ class HelloSlide(BaseSlide):
 
     def construct(self) -> None:
         eq = MathTex(r"e^{i\pi} + 1 = 0")
-        self.region.place(eq, "center")
+        self.region.place(eq, ORIGIN)
         self.play(Write(eq))
-        self.next_slide()  # first call -> MAIN named "HelloSlide" (auto)
+        self.next_slide()  # first call -> MAIN named "Hello Slide" (auto)
 
         consequence = MathTex(r"\therefore\ \cos\pi + i\sin\pi = -1")
-        self.region.place(consequence, "center")
+        self.region.place(consequence, ORIGIN)
         self.play(Write(consequence))
         self.next_slide()  # bare after first MAIN -> sub-stop

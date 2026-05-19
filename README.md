@@ -59,9 +59,10 @@ class Hello(BaseSlide):
         self.region = chrome.body_region
 
     def construct(self) -> None:
+        from manim import ORIGIN, Write
         eq = MathTex(r"e^{i\pi} + 1 = 0")
-        self.region.place(eq, "center")
-        self.play(self.region.write(eq))
+        self.region.place(eq, ORIGIN)
+        self.play(Write(eq))
         self.next_slide(name="Hello")
 ```
 
@@ -77,7 +78,8 @@ native section JSON. The web builder reconciles that with manim-slides'
 
 - `self.next_slide(name="Title")` -> **MAIN** slide named `"Title"`.
 - `self.next_slide()` as the *first* call -> **MAIN** slide
-  auto-named after the scene class (no warning).
+  auto-named after the scene class with PascalCase boundaries spaced
+  out (``DFSLecture`` → ``"DFS Lecture"``; no warning).
 - `self.next_slide()` after a named main -> **SUB** slide.
 - `self.next_slide(..., loop=True)` -> the `LOOP` variant.
 - `self.next_slide(..., section_type="simplex.main.skip")` -> explicit
@@ -99,8 +101,10 @@ Switch themes per-scope with `active_theme`:
 from simplex.theme import presets
 from simplex.theme.context import active_theme
 
+from manim import Tex
+
 with active_theme(presets.ACADEMIC_LIGHT):
-    label = BodyText("This Tex picks up the academic light palette.")
+    label = Tex("This Tex picks up the academic light palette.")
 ```
 
 ## Cross-package contract

@@ -6,8 +6,9 @@ Theme and Manim defaults are wired in ``simplex.plugin:activate`` (the
 
 - ``self.next_slide(name="Title")`` -> **main** slide, named ``"Title"``.
 - ``self.next_slide()`` *as the first call* -> auto-promoted to a **main**
-  slide named after the scene class. Silent, no warning -- this is the
-  intended affordance for "I'll let you guess".
+  slide named after the scene class with spaces inserted between
+  PascalCase boundaries (``DFSLecture -> "DFS Lecture"``,
+  ``ImplementBFSSlide -> "Implement BFS Slide"``).
 - ``self.next_slide()`` *after a named main* -> **sub** of that main.
 - ``loop=True`` flips to the ``LOOP`` variant; an explicit ``section_type=``
   always wins.
@@ -17,6 +18,7 @@ section JSON (``Section(type_=...) -> JSON "type"``), which the reconciler
 in ``simplex.render.reconcile`` reads back to build the main/sub tree.
 """
 
+import re
 from collections.abc import Iterable
 from typing import Any
 
@@ -25,6 +27,24 @@ from manim_slides.slide import Slide
 from simplex.engine.animations import clear_scene as _clear_scene
 from simplex.engine.region import Region
 from simplex.section import SimplexSectionType
+
+# Insert a space between a run of capitals and a Title-cased word
+# (``BFSLecture`` -> ``BFS Lecture``) and between any lower/Upper pair
+# (``ImplementBFS`` -> ``Implement BFS``).
+_CAMEL_TAIL = re.compile(r"([A-Z]+)([A-Z][a-z])")
+_CAMEL_LOWER = re.compile(r"([a-z\d])([A-Z])")
+
+
+def _pretty_class_name(name: str) -> str:
+    """Split a PascalCase class name into human-readable words.
+
+    Examples:
+        ``DFSLecture``       -> ``"DFS Lecture"``
+        ``ImplementBFSSlide`` -> ``"Implement BFS Slide"``
+        ``Title``            -> ``"Title"``
+    """
+    spaced = _CAMEL_TAIL.sub(r"\1 \2", name)
+    return _CAMEL_LOWER.sub(r"\1 \2", spaced)
 
 
 class BaseSlide(Slide):
@@ -55,9 +75,10 @@ class BaseSlide(Slide):
 
         if resolved.is_main:
             # If the caller didn't name it (bare first call, or explicit MAIN
-            # section_type with no name), fall back to the class name.
+            # section_type with no name), fall back to the class name with
+            # spaces between PascalCase boundaries.
             if name is None:
-                name = type(self).__name__
+                name = _pretty_class_name(type(self).__name__)
             self._current_main = name
 
         kwargs.setdefault(

@@ -8,7 +8,11 @@ def apply_theme_defaults(theme: Theme) -> None:
     from manim import Arrow, Dot, Line, MathTex, Rectangle, Square, Tex, Text
 
     tmpl = theme.latex.as_tex_template()
-    Tex.set_default(tex_template=tmpl, color=theme.palette.font)
+    Tex.set_default(
+        tex_template=tmpl,
+        color=theme.palette.font,
+        font_size=theme.typography.body,
+    )
     MathTex.set_default(
         tex_template=tmpl,
         color=theme.palette.font,

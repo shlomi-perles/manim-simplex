@@ -8,6 +8,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- `TexPage` mobject — fixed-width minipage helper. Width is configurable
+  via the ``width_cm`` kwarg (default 8.0) or by overriding the class
+  attribute on a subclass. Replaces the old ``Definition`` mobject; the
+  hardcoded ``{minipage}{8cm}`` literal no longer appears in presets or
+  tests.
+- `Region.split(axis, k)` — divide a region into ``k`` sub-regions
+  along a cardinal direction. Each piece keeps the perpendicular extent
+  and gets ``1/k`` of the axis extent; pieces are returned in the
+  direction of ``axis``. Their union equals the original region.
+- `Spacing.header_buff` / `Spacing.footer_buff` — chrome gap distances
+  exposed on the theme so they can be tuned deck-wide without editing
+  ``make_chrome``.
 - `simplex.manifest` module — Pydantic models (`DeckManifest`, `MainSlide`,
   `Subsection`) that define the cross-package contract between the plugin
   and the `simplex` web builder. The web builder now imports the schema
@@ -36,6 +48,23 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **BREAKING:** ``Region.place`` now takes a Manim **direction vector**
+  (``UP``, ``DR``, ``ORIGIN``, …) instead of a string anchor name. The
+  same applies to the ``_anchor_point`` helper. Migrate
+  ``region.place(mob, "top", buff=…)`` → ``region.place(mob, UP, buff=…)``.
+- **BREAKING:** ``make_chrome`` no longer accepts a ``page=`` parameter.
+  Slide numbering is presentation chrome and is now driven by the
+  RevealJS template (toggle via ``[web]`` overrides in ``deck.toml``)
+  so it survives without being baked into each frame.
+- **BREAKING:** ``BodyText`` is removed. Plain ``manim.Tex`` carries the
+  theme's body font size through ``apply_theme_defaults`` — call sites
+  rewrite ``BodyText(...)`` to ``Tex(...)``.
+- **BREAKING:** ``Definition`` is renamed to ``TexPage`` (and no longer
+  reads ``theme.latex.environments["definition"]``).
+- ``BaseSlide`` auto-promotion now pretty-prints the class name into a
+  space-separated label (``DFSLecture`` → ``"DFS Lecture"``,
+  ``ImplementBFSSlide`` → ``"Implement BFS Slide"``). The class name
+  itself is unchanged.
 - **BREAKING:** Python floor raised to **3.13** (was a transitional 3.14
   in the Phase 3 split commit). 3.13 is a long-term-supportable floor
   with much wider availability for lecture authors.
@@ -68,6 +97,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- ``BodyText`` mobject. Use ``manim.Tex`` (body size + color come from
+  ``apply_theme_defaults``) or ``Caption`` for smaller annotations.
+- ``Definition`` mobject. Replaced by ``TexPage`` (see Added/Changed).
+- ``make_chrome(..., page=…)`` parameter and the corresponding ``page``
+  entry in ``Chrome.mobjects``. Slide numbering moves to the web layer.
+- ``LatexProfile.environments["definition"]`` entries from
+  ``DASTIMATOR_DARK`` and ``ACADEMIC_LIGHT``: ``TexPage`` is now the
+  single owner of the ``{minipage}{<width>cm}`` literal.
 - `simplex.engine.section_types` module (replaced by `simplex.section`).
 - `simplex.slides.components` subpackage (replaced by `simplex.mobjects`).
 - `simplex.engine.transforms` module (split — see Changed).

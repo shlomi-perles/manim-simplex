@@ -28,10 +28,7 @@ DASTIMATOR_DARK: Theme = Theme(
         distance="#FF8000",
     ),
     typography=Typography(mono_family="JetBrains Mono"),
-    latex=LatexProfile(
-        preamble=_COMPACT_DISPLAY_PREAMBLE,
-        environments={"definition": "{minipage}{8cm}"},
-    ),
+    latex=LatexProfile(preamble=_COMPACT_DISPLAY_PREAMBLE),
     web_palette=WebPalette(
         accent="#FFD700",
         background="#242424",
@@ -61,9 +58,7 @@ ACADEMIC_LIGHT: Theme = Theme(
         distance="#B45309",
     ),
     typography=Typography(),
-    latex=LatexProfile(
-        environments={"definition": "{minipage}{8cm}"},
-    ),
+    latex=LatexProfile(),
     web_palette=WebPalette(
         accent="#0066CC",
         background="#FFFFFF",
