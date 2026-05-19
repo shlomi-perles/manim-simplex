@@ -2,13 +2,23 @@
 
 Wraps :class:`manim.Code` (the Pygments-backed listing) and exposes its
 ``code_lines`` attribute through small animation helpers.
+
+``inline_math_in_code`` / ``code_with_math`` rewrite ``$...$`` regions in
+each line into rendered ``MathTex`` glyphs after Pygments has already
+highlighted the surrounding code. This is the modern replacement for the
+old dastimator ``compile_code_tex`` helper -- it relies on Manim
+0.20.x's ``Code.code_lines`` glyph order and reflows each line so the
+math width drives the final layout.
 """
 
+import functools
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
 from manim import (
+    LEFT,
     RIGHT,
     SMALL_BUFF,
     Animation,
@@ -17,9 +27,12 @@ from manim import (
     Code,
     GrowFromCenter,
     Indicate,
+    MathTex,
+    SurroundingRectangle,
     Text,
     TransformMatchingShapes,
     VGroup,
+    VMobject,
     Write,
 )
 
@@ -27,6 +40,8 @@ from simplex.theme.context import get_active_theme
 from simplex.theme.pygments_style import DarculaStyle, register_darcula
 
 __all__ = ["DarculaStyle", "HighlightResult", "register_darcula"]
+
+_INLINE_MATH_PATTERN = re.compile(r"\$([^$\n]+)\$")
 
 
 @dataclass(frozen=True)
@@ -154,6 +169,247 @@ def code_explain(
         lag_ratio=kwargs.pop("lag_ratio", 1.0),
         **kwargs,
     )
+
+
+def code_with_math(
+    code: str,
+    *,
+    language: str = "python",
+    bold_math: bool = False,
+    math_color: str | None = None,
+    formatter_style: str = "darcula",
+    **kwargs: Any,
+) -> Code:
+    """``code_block`` + inline LaTeX for any ``$...$`` regions in ``code``.
+
+    Each ``$expr$`` segment is rewritten into a ``MathTex(expr)`` glyph
+    matched to the surrounding text height; the line is then reflowed so
+    subsequent glyphs sit flush against the math. The background is
+    re-fitted to the new line widths, preserving the original padding.
+
+    The math syntax is identical to :class:`manim.MathTex`. Inline math
+    cannot span line breaks; an unmatched ``$`` is left as a literal
+    dollar sign by Pygments. Set ``bold_math=True`` to wrap each match
+    in ``\\boldsymbol{...}``.
+    """
+    block = code_block(
+        code,
+        language=language,
+        formatter_style=formatter_style,
+        **kwargs,
+    )
+    return inline_math_in_code(
+        block,
+        code,
+        bold_math=bold_math,
+        math_color=math_color,
+    )
+
+
+def inline_math_in_code(
+    code: Code,
+    source: str,
+    *,
+    bold_math: bool = False,
+    math_color: str | None = None,
+) -> Code:
+    """Rewrite ``$...$`` regions in an existing ``Code`` block to ``MathTex``.
+
+    Pass the same string that was given to :class:`manim.Code` -- the
+    function needs it to locate the math spans, since ``Code`` does not
+    retain its input. Returns the same ``Code`` for chaining.
+    """
+    lines = source.splitlines() or [""]
+    code_lines = code.code_lines
+    math_scale = _compute_math_scale(code_lines)
+    any_math = False
+    for line_idx, line_mob in enumerate(code_lines):
+        if line_idx >= len(lines):
+            break
+        if _inline_math_in_line(
+            line_mob,
+            lines[line_idx],
+            math_scale=math_scale,
+            bold_math=bold_math,
+            math_color=math_color,
+        ):
+            any_math = True
+    if any_math:
+        _refit_background(code)
+    return code
+
+
+def _inline_math_in_line(
+    line_mob: VGroup,
+    source_line: str,
+    *,
+    math_scale: float,
+    bold_math: bool,
+    math_color: str | None,
+) -> bool:
+    """Replace each ``$...$`` span in ``line_mob`` with a ``MathTex`` glyph.
+
+    Returns ``True`` if any substitution happened so the caller can
+    decide whether the surrounding background needs to be refit.
+
+    Matches are processed right-to-left so a substitution on the right
+    never invalidates the glyph indices computed for the next one.
+    """
+    matches = list(_INLINE_MATH_PATTERN.finditer(source_line))
+    if not matches:
+        return False
+
+    substituted = False
+    glyph_for_char = _glyph_positions(source_line)
+    for match in reversed(matches):
+        g_start, g_end = _glyph_span(glyph_for_char, match.start(), match.end())
+        if g_start is None or g_end is None or g_end <= g_start:
+            continue
+        body = match.group(1)
+        tex_str = rf"\boldsymbol{{{body}}}" if bold_math else body
+        tex = MathTex(tex_str)
+        if math_color is not None:
+            tex.set_color(math_color)
+
+        span: VGroup = line_mob[g_start:g_end]  # type: ignore[assignment]
+        # Preserve the original whitespace gap between the closing ``$``
+        # and the next visible glyph -- ``next_to`` below uses this so a
+        # source line like ``$y_i$ and ...`` keeps its space instead of
+        # collapsing into ``y_iand``.
+        tail_gap = 0.0
+        if g_end < len(line_mob):
+            tail_gap = line_mob[g_end].get_left()[0] - span[-1].get_right()[0]
+
+        # A single calibrated scale (computed once from the code block)
+        # keeps every inline math glyph the same effective font size as
+        # the surrounding code, regardless of the math content. ``match
+        # _height`` here would inflate symbols like ``\infty`` whose bbox
+        # is the symbol alone, and shrink big operators like ``\bigcup``
+        # whose bbox already includes large limits.
+        tex.scale(math_scale)
+        tex.move_to(span, aligned_edge=LEFT)
+
+        # Anchor the tex into the line by replacing the first glyph
+        # in-place; the remaining marker glyphs collapse to zero width
+        # at the tex's right edge so they don't contribute to
+        # ``line_mob.width`` when ``next_to`` reflows the tail below.
+        span[0].become(tex)
+        anchor_right = span[0].get_right()
+        for marker in span[1:]:
+            marker.set_opacity(0).stretch_to_fit_width(0).move_to(anchor_right)
+
+        tail = line_mob[g_end:]
+        if len(tail) > 0:
+            tail.next_to(span[0], RIGHT, buff=max(tail_gap, 0.0))
+        substituted = True
+    return substituted
+
+
+def _compute_math_scale(code_lines: VGroup) -> float:
+    """Pick a single scale so inline ``MathTex`` matches code font size.
+
+    Uses the tallest code glyph across the block as a cap-height proxy
+    and a cached ``MathTex(r"Mq")`` (M for cap height, q for descender)
+    as the math-side reference. The ratio is the scale to apply to
+    every inline math glyph so x-height, cap-height and descenders line
+    up with the code text.
+    """
+    code_cap = max(
+        (glyph.height for line in code_lines for glyph in line),
+        default=0.0,
+    )
+    ref_h = _reference_math_height()
+    if code_cap <= 0 or ref_h <= 0:
+        return 1.0
+    return code_cap / ref_h
+
+
+@functools.cache
+def _reference_math_height() -> float:
+    """Cached reference height of a baseline ``MathTex`` calibration glyph.
+
+    LaTeX compilation is expensive; this runs once per process. The
+    glyph ``"Mq"`` is chosen for its full vertical extent -- ``M`` sets
+    the cap height, ``q`` provides a descender.
+    """
+    return MathTex(r"Mq").height
+
+
+def _glyph_positions(source_line: str) -> list[int | None]:
+    """Map each source char to its glyph index (or ``None`` for whitespace).
+
+    Manim's ``Code`` strips whitespace from ``code_lines`` glyph order
+    while preserving the on-screen indent positionally. We rebuild the
+    char-to-glyph mapping by walking the source and counting visible
+    chars -- so an indented line of ``    print($x$)`` maps the first
+    four chars to ``None`` and ``print`` to glyphs 0..4.
+    """
+    positions: list[int | None] = []
+    visible = 0
+    for ch in source_line:
+        if ch.isspace():
+            positions.append(None)
+        else:
+            positions.append(visible)
+            visible += 1
+    return positions
+
+
+def _glyph_span(
+    glyph_for_char: list[int | None],
+    char_start: int,
+    char_end: int,
+) -> tuple[int | None, int | None]:
+    """Return (start, end) glyph indices for the half-open char range."""
+    start: int | None = None
+    end: int | None = None
+    for i in range(char_start, min(char_end, len(glyph_for_char))):
+        if glyph_for_char[i] is not None:
+            start = glyph_for_char[i]
+            break
+    for i in range(min(char_end, len(glyph_for_char)) - 1, char_start - 1, -1):
+        if glyph_for_char[i] is not None:
+            end = glyph_for_char[i] + 1
+            break
+    return start, end
+
+
+def _refit_background(code: Code) -> None:
+    """Re-fit ``code.background`` to the (possibly resized) contents.
+
+    ``Code`` builds its background once at construction with
+    ``SurroundingRectangle`` around the line-number + code-line group
+    (plus the macOS-style buttons in ``background="window"`` mode);
+    after we shuffle glyph widths and heights the rectangle no longer
+    hugs the text. We rebuild it around the same content, preserving
+    the original buff, corner radius, stroke / fill styling, and the
+    button decorations attached as submobjects of the background.
+    """
+    background = getattr(code, "background", None)
+    if background is None or not isinstance(background, VMobject):
+        return
+    inner = VGroup(*(m for m in code.submobjects if m is not background))
+    if len(inner) == 0:
+        return
+    # ``window`` backgrounds attach the three macOS-style dots as a
+    # child VGroup that visually sits just outside the top-left corner
+    # of the rectangle. ``become`` walks the entire family and would
+    # collapse those decorations onto the origin, so we detach them
+    # before the replacement and re-add them after.
+    decorations = list(background.submobjects)
+    background.remove(*decorations)
+    replacement = SurroundingRectangle(
+        inner,
+        buff=getattr(background, "buff", 0.3),
+        color=background.get_stroke_color(),
+        stroke_width=background.get_stroke_width(),
+        fill_color=background.get_fill_color(),
+        fill_opacity=background.get_fill_opacity(),
+        corner_radius=getattr(background, "corner_radius", 0.0),
+    )
+    background.become(replacement)
+    if decorations:
+        background.add(*decorations)
 
 
 def transform_code_lines(
