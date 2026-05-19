@@ -10,29 +10,65 @@ mutating that value in ``setup()`` is too late -- the camera locks in
 the previous value. A plugin runs once at ``import manim`` time, before
 any scene is constructed, which is the correct seam.
 
-The plugin pulls the *active* theme from ``simplex.theme.context``; the
-per-deck CLI runner is responsible for setting it before spawning the
-manim subprocess (via ``active_theme(theme)``).
+Manim 0.20.x's plugin loader (``manim.plugins.plugins_flags.get_plugins``)
+resolves the ``"module:activate"`` entry-point with ``entry_point.load()``
+which imports the module and returns the symbol -- but **does not call**
+``activate()``. We therefore invoke ``activate()`` from module import
+itself so the entry-point resolution doubles as the activation hook. The
+function stays exported in case downstream code wants to re-apply
+defaults after swapping themes.
+
+Theme selection priority:
+1. ``simplex.theme.context.get_active_theme()`` -- the in-process active
+   theme (set by parent code that ``import simplex.plugin`` from the
+   same interpreter).
+2. ``SIMPLEX_THEME`` environment variable -- the deck.toml ``theme`` name
+   propagated across the ``manim-slides render`` subprocess by
+   ``simplex.render.runner``.
+3. ``DASTIMATOR_DARK`` -- the package default.
 """
 
 from __future__ import annotations
 
+import os
+
+
+def _resolve_theme():  # type: ignore[no-untyped-def]
+    """Pick the theme that should drive Manim defaults for this process."""
+    from simplex.theme.context import _active
+    from simplex.theme.presets import DASTIMATOR_DARK, PRESETS
+
+    # In-process context (a parent that did ``with active_theme(t): ...``)
+    # wins; env-var fallback handles cross-process propagation.
+    if (active := _active.get()) is not None:
+        return active
+    env_name = os.environ.get("SIMPLEX_THEME")
+    if env_name and env_name in PRESETS:
+        return PRESETS[env_name]
+    return DASTIMATOR_DARK
+
 
 def activate() -> None:
-    """Apply the active Simplex theme to ``manim.config`` and defaults.
+    """Apply the resolved Simplex theme to ``manim.config`` and defaults.
 
-    Idempotent: calling twice is harmless. Run at ``import manim`` time
-    via the ``manim.plugins`` entry-point.
+    Idempotent: calling twice is harmless. Auto-invoked on module import
+    because Manim 0.20.x doesn't call entry-point activate functions; see
+    module docstring for the rationale.
     """
     import manim
 
     from simplex.engine.defaults import apply_theme_defaults
-    from simplex.theme.context import get_active_theme
     from simplex.theme.pygments_style import register_darcula
 
-    theme = get_active_theme()
+    theme = _resolve_theme()
     apply_theme_defaults(theme)
     manim.config.tex_template = theme.latex.as_tex_template()
     manim.config.background_color = theme.palette.background
     manim.config.save_sections = True
     register_darcula()
+
+
+# Manim's plugin loader imports this module via ``entry_point.load()`` but
+# never calls ``activate()``. Run it now so the entry-point resolution itself
+# applies the theme.
+activate()
