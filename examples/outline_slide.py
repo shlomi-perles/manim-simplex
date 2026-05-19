@@ -10,17 +10,17 @@ class OutlineDemo(OutlineScene):
     def __init__(self, **kwargs):
         parts = [
             OutlinePart(
-                title=TexPage(r"\textbf{Research Question}"),
+                title=TexPage(r"Research Question"),
                 label=Caption(r"Research\\Question"),
                 visual=Circle(),
             ),
             OutlinePart(
-                title=TexPage(r"\textbf{Low-Rank Algorithms}"),
+                title=TexPage(r"Low-Rank Algorithms"),
                 label=Caption("Algorithms"),
                 visual=Square(),
             ),
             OutlinePart(
-                title=TexPage(r"\textbf{Case Study}"),
+                title=TexPage(r"Case Study"),
                 label=Caption(r"Case\\Study"),
                 visual=Triangle(),
             ),
