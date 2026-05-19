@@ -11,9 +11,16 @@ from typing import Self
 
 import numpy as np
 from manim import Mobject
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 type EdgeValue = float | np.ndarray | Iterable[float] | Mobject
+
+_EDGE_SPECS = {
+    "top": (1, "get_bottom"),
+    "bottom": (1, "get_top"),
+    "left": (0, "get_right"),
+    "right": (0, "get_left"),
+}
 
 
 def _as_dir(anchor: np.ndarray | Iterable[float]) -> np.ndarray:
@@ -46,6 +53,11 @@ def _edge_coordinate(value: EdgeValue, axis: int, getter_name: str) -> float:
     return float(point[axis])
 
 
+def _edge_value(edge: str, value: EdgeValue) -> float:
+    axis, getter_name = _EDGE_SPECS[edge]
+    return _edge_coordinate(value, axis, getter_name)
+
+
 class Region(BaseModel):
     """A mutable axis-aligned region in Manim frame coordinates."""
 
@@ -54,6 +66,23 @@ class Region(BaseModel):
     bottom: float
     left: float
     right: float
+
+    @field_validator("top", "bottom", "left", "right", mode="before")
+    @classmethod
+    def _coerce_edge_value(cls, value: EdgeValue, info: ValidationInfo) -> float:
+        if info.field_name is None:
+            raise ValueError("edge field name is missing")
+        return _edge_value(info.field_name, value)
+
+    def __init__(
+        self,
+        *,
+        top: EdgeValue,
+        bottom: EdgeValue,
+        left: EdgeValue,
+        right: EdgeValue,
+    ) -> None:
+        super().__init__(top=top, bottom=bottom, left=left, right=right)
 
     @classmethod
     def full_frame(cls) -> Self:
@@ -122,14 +151,10 @@ class Region(BaseModel):
         y for top/bottom. Mobjects contribute the edge facing this region, then
         use the same coordinate rule.
         """
-        if top is not None:
-            self.top = _edge_coordinate(top, 1, "get_bottom")
-        if bottom is not None:
-            self.bottom = _edge_coordinate(bottom, 1, "get_top")
-        if left is not None:
-            self.left = _edge_coordinate(left, 0, "get_right")
-        if right is not None:
-            self.right = _edge_coordinate(right, 0, "get_left")
+        updates = (("top", top), ("bottom", bottom), ("left", left), ("right", right))
+        for edge, value in updates:
+            if value is not None:
+                setattr(self, edge, _edge_value(edge, value))
 
     def shrink(
         self,
@@ -240,8 +265,7 @@ class Region(BaseModel):
         usable = span - 2 * inset
         if usable < 0:
             raise ValueError(
-                "inset is too large for the region extent; "
-                f"got inset={inset} for span={span}"
+                f"inset is too large for the region extent; got inset={inset} for span={span}"
             )
         if usable == 0 and k > 1:
             raise ValueError("inset leaves no room for multiple points")

@@ -256,8 +256,13 @@ class OutlineScene(BaseSlide):
         if part.visual is not None:
             part.title.to_edge(UP)
             return
-        content_center_y = (self.region.top + self.dots.get_top()[1]) / 2
-        part.title.move_to(np.array([self.region.center[0], content_center_y, 0.0]))
+        title_region = Region(
+            top=self.region.top,
+            bottom=self.dots,
+            left=self.region.left,
+            right=self.region.right,
+        )
+        title_region.place(part.title)
 
     def _place_feature_visual(
         self,
@@ -301,13 +306,19 @@ class OutlineScene(BaseSlide):
         *,
         exclude_compact: Mobject | None = None,
     ) -> Region:
-        top = part.title.get_bottom()[1] - _CONTENT_BUFF
-        bottom = self._feature_bottom(exclude_compact=exclude_compact) + _CONTENT_BUFF
-        if top <= bottom:
-            bottom = self.progress_bar.get_top()[1] + _CONTENT_BUFF
-        if top <= bottom:
-            bottom = top - 1e-6
-        return Region(top=top, bottom=bottom, left=self.region.left, right=self.region.right)
+        feature_region = Region(
+            top=part.title,
+            bottom=self._feature_bottom(exclude_compact=exclude_compact),
+            left=self.region.left,
+            right=self.region.right,
+        )
+        feature_region.shrink(top=_CONTENT_BUFF, bottom=_CONTENT_BUFF)
+        if feature_region.top <= feature_region.bottom:
+            feature_region.update(bottom=self.progress_bar)
+            feature_region.shrink(bottom=_CONTENT_BUFF)
+        if feature_region.top <= feature_region.bottom:
+            feature_region.bottom = feature_region.top - 1e-6
+        return feature_region
 
     def _feature_bottom(self, *, exclude_compact: Mobject | None = None) -> float:
         bottom = self.progress_bar.get_top()[1]
@@ -323,15 +334,15 @@ class OutlineScene(BaseSlide):
         return bottom
 
     def _label_region(self) -> Region:
-        top = self.progress_bar.get_bottom()[1]
-        if top <= self.region.bottom:
-            top = self.region.bottom + 1e-6
-        return Region(
-            top=top,
+        label_region = Region(
+            top=self.progress_bar,
             bottom=self.region.bottom,
             left=self.region.left,
             right=self.region.right,
         )
+        if label_region.top <= self.region.bottom:
+            label_region.top = self.region.bottom + 1e-6
+        return label_region
 
     def _label_point(self, index: int) -> np.ndarray:
         return self._label_region().linspace(RIGHT, self.part_count)[index]
@@ -414,11 +425,7 @@ class OutlineScene(BaseSlide):
 
     @staticmethod
     def _font_mobjects(mob: Mobject) -> list[Any]:
-        return [
-            cast(Any, submob)
-            for submob in mob.get_family()
-            if hasattr(submob, "font_size")
-        ]
+        return [cast(Any, submob) for submob in mob.get_family() if hasattr(submob, "font_size")]
 
     @classmethod
     def _set_font_size(cls, mob: Mobject, font_size: float) -> None:
