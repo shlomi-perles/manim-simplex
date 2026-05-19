@@ -1,43 +1,30 @@
-# File length justification (STYLE.md: >300 lines requires a note):
-# `TransformByGlyphMap` is one cohesive Animation class with several private
-# branches (introducer / remover / double / show_indices / auto_*). Splitting
-# the branches across modules would force callers to thread the same partial
-# state through public seams; keeping them as private methods of one class is
-# the simplest representation. `GhostSlideFade` is small but lives here so the
-# whole "custom Animation classes derived from MF_Tools" lives in one file.
-"""Glyph-aware Tex transforms and composite fade animations.
+"""Glyph-aware Tex transform with per-entry kwargs and auto fallbacks.
 
-`TransformByGlyphMap` is the flagship: a richer alternative to Manim's
-`TransformMatchingTex` / `TransformMatchingShapes` that lets you map glyph
-indices explicitly, with per-entry kwargs (path_arc, run_time, delay) and an
-auto `show_indices` mode for discovering the right index assignments.
+``TransformByGlyphMap`` is the flagship: a richer alternative to Manim's
+``TransformMatchingTex`` / ``TransformMatchingShapes`` that lets you map
+glyph indices explicitly, with per-entry kwargs (``path_arc``, ``run_time``,
+``delay``) and an auto ``show_indices`` mode for discovering the right
+index assignments.
 
-`GhostSlideFade` is a single-mobject in-place animation that fades in, lives
-for a configurable lifetime while shifting / scaling / rotating, then fades
-out -- useful for ghosted transition cues over an unchanged scene.
-
-Adapted from MF_Tools (John Connell) for Manim CE 0.20+. The `interpret_delay`
-rate-func patch is preserved as-is because it is still the cleanest way to
-shift sub-animations within an AnimationGroup; Manim 0.19's
-`turn_animation_into_updater(anim, delay=0.5)` only handles updaters, not
-sub-animations of an AnimationGroup.
+Adapted from MF_Tools (John Connell) for Manim CE 0.20+. The
+``_interpret_delay`` rate-func patch is preserved because it is still the
+cleanest way to shift sub-animations within an ``AnimationGroup``: Manim
+0.19's ``turn_animation_into_updater(anim, delay=0.5)`` only handles
+updaters, not sub-animations of an ``AnimationGroup``.
 """
 
 from typing import Any
 
-import numpy as np
 from manim import (
     BLACK,
     BLUE_D,
     DOWN,
-    ORIGIN,
     RED_D,
     Animation,
     AnimationGroup,
     Create,
     FadeIn,
     FadeOut,
-    Mobject,
     ReplacementTransform,
     VGroup,
     VMobject,
@@ -52,17 +39,18 @@ def _is_animation_class(value: Any) -> bool:
 
 
 def _is_empty_slot(value: Any) -> bool:
-    """A glyph_map slot is 'empty' when it's an empty list or an Animation class."""
+    """A glyph_map slot is *empty* when it's an empty list or an Animation class."""
     return not value or _is_animation_class(value)
 
 
 def _interpret_delay(opts: dict[str, Any]) -> dict[str, Any]:
-    """Convert a `delay` kwarg into a stretched run_time + offset rate_func.
+    """Convert a ``delay`` kwarg into a stretched ``run_time`` + offset rate_func.
 
-    Manim has no first-class delay on Animation, and Succession injects a
-    boundary between sub-animations that disrupts AnimationGroup. Stretching
-    the rate_func avoids both problems -- the animation simply waits at its
-    starting state for `delay` seconds before its real curve begins.
+    Manim has no first-class delay on ``Animation``, and ``Succession``
+    injects a boundary between sub-animations that disrupts
+    ``AnimationGroup``. Stretching the rate_func avoids both problems --
+    the animation simply waits at its starting state for ``delay`` seconds
+    before its real curve begins.
     """
     delay = opts.pop("delay", 0)
     if delay == 0:
@@ -83,27 +71,30 @@ def _interpret_delay(opts: dict[str, Any]) -> dict[str, Any]:
 
 
 class TransformByGlyphMap(AnimationGroup):
-    """Animate `mobA` -> `mobB` by mapping glyph indices explicitly.
+    """Animate ``mobA`` -> ``mobB`` by mapping glyph indices explicitly.
 
-    Each `glyph_map` entry is `(from_indices, to_indices, [kwargs])`:
-      - both populated -> ReplacementTransform of those glyphs
-      - empty `from_indices` -> introducer (default FadeIn) of `to_indices`
-      - empty `to_indices`   -> remover (default FadeOut) of `from_indices`
+    Each ``glyph_map`` entry is ``(from_indices, to_indices, [kwargs])``:
 
-    Special slot values: an empty list, or an `Animation` *class* used in
+    - both populated -> ``ReplacementTransform`` of those glyphs
+    - empty ``from_indices`` -> introducer (default ``FadeIn``) of ``to_indices``
+    - empty ``to_indices``   -> remover (default ``FadeOut``) of ``from_indices``
+
+    Special slot values: an empty list, or an ``Animation`` *class* used in
     place of the empty list to override the default introducer / remover.
 
     Per-entry kwargs accept everything the underlying animation accepts plus:
-      - `delay`: seconds to wait before this sub-animation starts.
-      - `transform_class`: alternate transformer (e.g. `FadeTransform`).
+
+    - ``delay``: seconds to wait before this sub-animation starts.
+    - ``transform_class``: alternate transformer (e.g. ``FadeTransform``).
 
     Indices not mentioned in the map are auto-resolved:
-      - default: `ReplacementTransform` pairs in order (requires equal counts).
-      - `auto_fade=True`: FadeOut leftover from-glyphs, FadeIn leftover to-glyphs.
-      - `auto_morph=True`: morph the leftover groups as one big VGroup pair.
+
+    - default: ``ReplacementTransform`` pairs in order (requires equal counts).
+    - ``auto_fade=True``: ``FadeOut`` leftover from-glyphs, ``FadeIn`` leftover to-glyphs.
+    - ``auto_morph=True``: morph the leftover groups as one big ``VGroup`` pair.
 
     If the unmentioned counts mismatch (and neither auto mode is set),
-    falls back to `show_indices` mode: stacks both mobjects and overlays
+    falls back to ``show_indices`` mode: stacks both mobjects and overlays
     coloured index labels so you can read off the right indices.
 
     See the showcase deck for runnable examples.
@@ -343,60 +334,3 @@ class TransformByGlyphMap(AnimationGroup):
         # Re-attach mobB as a single parent rather than a bag of orphan submobs.
         scene.remove(self.mobB)
         scene.add(self.mobB)
-
-
-class GhostSlideFade(Animation):
-    """Fade a mobject in, optionally drift / scale / rotate it, then fade out.
-
-    Self-contained: removes the mobject from the scene on cleanup, so callers
-    can spawn ghost cues without later teardown bookkeeping.
-    """
-
-    def __init__(
-        self,
-        mob: Mobject,
-        *,
-        scale_factor: float = 1.0,
-        shift_vector: np.ndarray = ORIGIN,
-        rotate_amount: float = 0.0,
-        fade_in_time: float = 1.0,
-        fade_out_time: float = 1.0,
-        lifetime: float = 3.0,
-        living_stroke_opacity: float = 1.0,
-        living_fill_opacity: float = 0.0,
-        **kwargs: Any,
-    ) -> None:
-        self.mobject = mob
-        self.scale_factor = scale_factor
-        self.shift_vector = shift_vector
-        self.rotate_amount = rotate_amount
-        self.fade_in_time = fade_in_time
-        self.fade_out_time = fade_out_time
-        self.lifetime = lifetime
-        self.living_stroke_opacity = living_stroke_opacity
-        self.living_fill_opacity = living_fill_opacity
-        kwargs.setdefault("run_time", fade_in_time + lifetime + fade_out_time)
-        super().__init__(mob, **kwargs)
-
-    def clean_up_from_scene(self, scene: Any) -> None:
-        super().clean_up_from_scene(scene)
-        scene.remove(self.mobject)
-
-    def interpolate_mobject(self, alpha: float) -> None:
-        alpha = self.rate_func(alpha)
-        total = self.fade_in_time + self.lifetime + self.fade_out_time
-        self.mobject.become(self.starting_mobject)
-        self.mobject.scale(self.scale_factor**alpha)
-        self.mobject.shift(self.shift_vector * alpha)
-        self.mobject.rotate(self.rotate_amount * alpha, about_point=self.mobject.get_center())
-        in_frac = self.fade_in_time / total
-        out_frac = 1 - self.fade_out_time / total
-        if alpha <= in_frac:
-            factor = alpha / in_frac if in_frac > 0 else 1.0
-        elif alpha >= out_frac:
-            tail = self.fade_out_time / total
-            factor = (1 - alpha) / tail if tail > 0 else 0.0
-        else:
-            factor = 1.0
-        self.mobject.set_fill(opacity=self.living_fill_opacity * factor)
-        self.mobject.set_stroke(opacity=self.living_stroke_opacity * factor)

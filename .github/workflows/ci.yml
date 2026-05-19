@@ -7,6 +7,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Install system deps
@@ -15,10 +19,17 @@ jobs:
           sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended \
                                   ffmpeg libcairo2-dev libpango1.0-dev
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Pin Python ${{ matrix.python-version }}
+        run: uv python pin ${{ matrix.python-version }}
+      - run: uv sync --all-extras
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run basedpyright
       - run: uv run pytest -q
-      - name: Plugin activate smoke
+      - name: Plugin import smoke
         run: uv run python -c "import simplex.plugin; simplex.plugin.activate(); print('ok')"
+      - name: Plugin discovery smoke
+        run: uv run manim plugins -l | tee /dev/stderr | grep -q '^\s*•\s*simplex\b'

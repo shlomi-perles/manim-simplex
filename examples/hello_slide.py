@@ -1,0 +1,34 @@
+"""Minimal Simplex deck: one main slide, one sub-stop.
+
+Demonstrates:
+- `BaseSlide.next_slide()` -- first bare call auto-promotes to a main
+  slide named after the scene class. Pass ``name=`` to override the name.
+- `BaseSlide.next_slide()` -- subsequent bare call -> sub-stop of the
+  current main (RevealJS vertical navigation).
+- `region.place(...)` to position via anchor.
+- `Region` body shrunk by `make_chrome` for a clean header + body band.
+"""
+
+from manim import MathTex, Write
+
+from simplex.slides import BaseSlide, make_chrome
+from simplex.theme import presets
+
+
+class HelloSlide(BaseSlide):
+    def setup(self) -> None:
+        super().setup()
+        chrome = make_chrome(presets.DASTIMATOR_DARK, self.region, header="Hello, Simplex")
+        self.add_to_canvas(**chrome.mobjects)
+        self.region = chrome.body_region
+
+    def construct(self) -> None:
+        eq = MathTex(r"e^{i\pi} + 1 = 0")
+        self.region.place(eq, "center")
+        self.play(Write(eq))
+        self.next_slide()  # first call -> MAIN named "HelloSlide" (auto)
+
+        consequence = MathTex(r"\therefore\ \cos\pi + i\sin\pi = -1")
+        self.region.place(consequence, "center")
+        self.play(Write(consequence))
+        self.next_slide()  # bare after first MAIN -> sub-stop

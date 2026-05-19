@@ -1,23 +1,22 @@
 """BaseSlide -- thin manim-slides ``Slide`` with the Simplex hierarchy API.
 
-Theme and Manim defaults are no longer wired here. The
-``simplex.plugin:activate`` ``manim.plugins`` entry-point applies them once
-per render process (each deck's ``manim.cfg`` enables it). What stays in
+Theme and Manim defaults are wired in ``simplex.plugin:activate`` (the
+``manim.plugins`` entry-point) once per render process. What stays in
 ``BaseSlide`` is the slide-hierarchy override:
 
-- ``self.next_slide(name="...")`` -> main slide, named.
-- ``self.next_slide()`` -> sub-slide of the previous main; the **first**
-  bare call in a scene auto-promotes itself to a main named after the
-  class, and emits a ``UserWarning``.
-- ``loop=True`` flips the LOOP variant; an explicit ``section_type=`` always
-  wins.
+- ``self.next_slide(name="Title")`` -> **main** slide, named ``"Title"``.
+- ``self.next_slide()`` *as the first call* -> auto-promoted to a **main**
+  slide named after the scene class. Silent, no warning -- this is the
+  intended affordance for "I'll let you guess".
+- ``self.next_slide()`` *after a named main* -> **sub** of that main.
+- ``loop=True`` flips to the ``LOOP`` variant; an explicit ``section_type=``
+  always wins.
 
-The chosen ``SimplexSectionType.value`` round-trips into manim's native
+The chosen ``SimplexSectionType.value`` round-trips into Manim's native
 section JSON (``Section(type_=...) -> JSON "type"``), which the reconciler
 in ``simplex.render.reconcile`` reads back to build the main/sub tree.
 """
 
-import warnings
 from collections.abc import Iterable
 from typing import Any
 
@@ -25,15 +24,18 @@ from manim_slides.slide import Slide
 
 from simplex.engine.animations import clear_scene as _clear_scene
 from simplex.engine.region import Region
-from simplex.engine.section_types import SimplexSectionType
+from simplex.section import SimplexSectionType
 
 
 class BaseSlide(Slide):
-    """manim-slides ``Scene`` with the Simplex hierarchy + ``clear_scene``."""
+    """``manim_slides.Slide`` with the Simplex hierarchy + ``clear_scene``."""
+
+    _current_main: str | None
 
     def setup(self) -> None:
         super().setup()
         self.region = Region.full_frame()
+        self._current_main = None
 
     def next_slide(
         self,
@@ -49,24 +51,23 @@ class BaseSlide(Slide):
         ``manim_slides.Slide.next_slide`` with the resolved ``section_type``
         and a sensible default for RevealJS ``direction``.
         """
-        if not hasattr(self, "_simplex_current_main"):
-            self._simplex_current_main: str | None = None
+        resolved = self._resolve_section_type(name, section_type, loop)
 
-        resolved_type = self._resolve_section_type(name, section_type, loop)
-        if resolved_type.is_main and name is None:
-            # Reached only via auto-promotion path; the helper sets name.
-            name = type(self).__name__
-        if resolved_type.is_main:
-            self._simplex_current_main = name
+        if resolved.is_main:
+            # If the caller didn't name it (bare first call, or explicit MAIN
+            # section_type with no name), fall back to the class name.
+            if name is None:
+                name = type(self).__name__
+            self._current_main = name
 
         kwargs.setdefault(
             "direction",
-            "vertical" if resolved_type.is_sub else "horizontal",
+            "vertical" if resolved.is_sub else "horizontal",
         )
 
         super().next_slide(
-            name=name or "unnamed",
-            section_type=resolved_type.value,
+            name=name or self._current_main or "unnamed",
+            section_type=resolved.value,
             loop=loop,
             **kwargs,
         )
@@ -77,20 +78,17 @@ class BaseSlide(Slide):
         section_type: SimplexSectionType | str | None,
         loop: bool,
     ) -> SimplexSectionType:
+        # Explicit section_type always wins.
         if section_type is not None:
             if isinstance(section_type, SimplexSectionType):
                 return section_type
             return SimplexSectionType(section_type)
+        # Named call -> MAIN (LOOP variant on loop=True).
         if name is not None:
             return SimplexSectionType.MAIN_LOOP if loop else SimplexSectionType.MAIN
-        if self._simplex_current_main is None:
-            cls_name = type(self).__name__
-            warnings.warn(
-                f"first next_slide() in {cls_name} has no name; "
-                f"auto-promoting to a main slide named {cls_name!r}. "
-                f"Pass next_slide(name=...) on the first call to silence this.",
-                stacklevel=3,
-            )
+        # Bare call: if no main has been opened yet, auto-promote to MAIN
+        # named after the class. After the first main, bare = SUB.
+        if self._current_main is None:
             return SimplexSectionType.MAIN_LOOP if loop else SimplexSectionType.MAIN
         return SimplexSectionType.SUB_LOOP if loop else SimplexSectionType.SUB
 
