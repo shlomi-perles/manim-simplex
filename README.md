@@ -23,8 +23,8 @@ namespace.
 | `simplex.manifest` | `DeckManifest`, `MainSlide`, `Subsection` Pydantic models -- the cross-package contract consumed by the `simplex` web builder. Manim-free. |
 | `simplex.theme` | `Theme`, `Palette`, `Typography`, `Spacing`, `Motion`, `LatexProfile`, `WebPalette`, `active_theme`, `get_active_theme`, `presets`, `render_web_css`. |
 | `simplex.engine` | Animation primitives -- `Region`, `Remove`, `clear_scene`, `exit_for`, `register_exit`, `set_exit_animation`, `HighlightResult`, `apply_theme_defaults`, plus the `glyph_map`, `ghost_fade`, `dynamics`, `geometry`, `code`, `text`, `scaling`, `debug` submodules. |
-| `simplex.mobjects` | `Node`, `Edge`, `ArrayMob`, `ArrayEntry`, `ArrayPointer`. |
-| `simplex.slides` | `BaseSlide`, `Chrome`, `make_chrome`. |
+| `simplex.mobjects` | `Node`, `Edge`, `ArrayMob`, `ArrayEntry`, `ArrayPointer`, `OutlineProgressBar`. |
+| `simplex.slides` | `BaseSlide`, `OutlineScene`, `OutlinePart`, `Chrome`, `make_chrome`. |
 
 ## Install
 
@@ -84,6 +84,30 @@ native section JSON. The web builder reconciles that with manim-slides'
 - `self.next_slide(..., loop=True)` -> the `LOOP` variant.
 - `self.next_slide(..., section_type="simplex.main.skip")` -> explicit
   override always wins.
+
+## Outline slides
+
+`OutlineScene` composes typed `OutlinePart` objects into an animated
+`BaseSlide` outline. Each part owns already-built Manim mobjects for its
+feature title, compact label, and optional visual. Progress dots are
+positioned with `self.region.linspace(RIGHT, n)` defaults, so edge
+margins and inter-dot gaps are equal.
+
+```python
+from manim import Circle, Square, Tex
+from simplex.engine.text import Caption
+from simplex.slides import OutlinePart, OutlineScene
+
+class Outline(OutlineScene):
+    def __init__(self, **kwargs):
+        super().__init__(
+            parts=[
+                OutlinePart(Tex("Research Question"), Caption("Question"), Circle()),
+                OutlinePart(Tex("Algorithms"), Caption("Algorithms"), Square()),
+            ],
+            **kwargs,
+        )
+```
 
 ## Theme
 

@@ -13,6 +13,10 @@ here.
     changes between auto-promotion and an explicit name).
   - `self.next_slide()` after a named main -> **sub-slide** of that main.
   - `loop=True` -> the `LOOP` variant; explicit `section_type=` always wins.
+- `OutlineScene` / `OutlinePart` -- reusable animated lecture outline
+  scene. Progress dots are positioned through `Region.linspace(RIGHT, n)`
+  defaults, not `arrange`, so edge margins and inter-dot gaps match the
+  Simplex region contract.
 - `make_chrome(theme, region, *, header=..., footer=...)`
   -- *pure* factory returning a `Chrome(mobjects, body_region)`
   NamedTuple. Splat `chrome.mobjects` into `add_to_canvas` and assign

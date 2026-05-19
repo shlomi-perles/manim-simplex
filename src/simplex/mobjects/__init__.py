@@ -8,5 +8,6 @@ slide system.
 
 from simplex.mobjects.array import ArrayEntry, ArrayMob, ArrayPointer
 from simplex.mobjects.graph import Edge, Node
+from simplex.mobjects.outline import OutlineProgressBar
 
-__all__ = ["ArrayEntry", "ArrayMob", "ArrayPointer", "Edge", "Node"]
+__all__ = ["ArrayEntry", "ArrayMob", "ArrayPointer", "Edge", "Node", "OutlineProgressBar"]

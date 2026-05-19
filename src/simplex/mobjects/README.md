@@ -15,6 +15,8 @@ namespace convention.
   `indicate_at`, `push`, `pop`, `swap`).
 - `ArrayPointer` -- arrow pointing at an entry, with `to_entry(new_i)`
   animation.
+- `OutlineProgressBar` -- linspace-driven dot progress bar used by
+  `simplex.slides.OutlineScene`.
 
 ## Conventions
 
