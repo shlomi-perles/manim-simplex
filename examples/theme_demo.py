@@ -6,9 +6,8 @@ when a single deck wants two color schemes (e.g. a dark intro and a light
 proof).
 """
 
-from manim import FadeIn, Scene
+from manim import FadeIn, Scene, Tex
 
-from simplex.engine.text import BodyText
 from simplex.theme import presets
 from simplex.theme.context import active_theme
 
@@ -16,9 +15,9 @@ from simplex.theme.context import active_theme
 class ThemeDemo(Scene):
     def construct(self) -> None:
         with active_theme(presets.DASTIMATOR_DARK):
-            dark_label = BodyText("dark theme")
+            dark_label = Tex("dark theme")
         with active_theme(presets.ACADEMIC_LIGHT):
-            light_label = BodyText("light theme")
+            light_label = Tex("light theme")
 
         dark_label.shift([0, 1, 0])
         light_label.shift([0, -1, 0])

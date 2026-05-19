@@ -13,11 +13,16 @@ here.
     changes between auto-promotion and an explicit name).
   - `self.next_slide()` after a named main -> **sub-slide** of that main.
   - `loop=True` -> the `LOOP` variant; explicit `section_type=` always wins.
-- `make_chrome(theme, region, *, header=..., footer=..., page=...)`
+- `make_chrome(theme, region, *, header=..., footer=...)`
   -- *pure* factory returning a `Chrome(mobjects, body_region)`
   NamedTuple. Splat `chrome.mobjects` into `add_to_canvas` and assign
-  `chrome.body_region` to `self.region`.
+  `chrome.body_region` to `self.region`. Buff distances are read from
+  `theme.spacing.header_buff` / `footer_buff`.
 - `Chrome` -- the NamedTuple returned by `make_chrome`.
+
+Slide numbering and a wall clock are presentation chrome, not rendered
+chrome: they're driven by the RevealJS template / `[web]` deck overrides
+(see `simplex.web`), so they survive without being re-rendered.
 
 Re-usable mobjects (`Node`, `Edge`, `ArrayMob`, ...) live in
 `simplex.mobjects`, not here.
@@ -28,7 +33,7 @@ Re-usable mobjects (`Node`, `Edge`, `ArrayMob`, ...) live in
   `get_active_theme()` inside `setup()`.
 - Don't call `super().setup()` after touching `self.region` -- the
   base seeds it first.
-- Don't subclass for chrome (header/footer/page); use `make_chrome`
+- Don't subclass for chrome (header/footer); use `make_chrome`
   and `add_to_canvas(**chrome.mobjects)`.
 - Don't mutate the `region` passed to `make_chrome` -- it is treated as
   immutable; the returned `body_region` is the shrunk copy.

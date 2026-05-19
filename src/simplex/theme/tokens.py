@@ -31,12 +31,21 @@ class Typography(BaseModel):
 
 
 class Spacing(BaseModel):
+    """Layout constants for slide chrome and Mobject strokes.
+
+    The ``*_buff`` fields are the inward gap between a chrome mobject (header,
+    footer) and the corresponding edge of the slide region — i.e. the ``buff``
+    argument forwarded to :meth:`Region.place`. Themes override per slide-deck.
+    """
+
     model_config = ConfigDict(frozen=True)
     edge_stroke_width: float = 6.0
     vertex_stroke_width: float = 6.4
     page_margin: float = 0.4
     header_height: float = 0.7
     footer_height: float = 0.5
+    header_buff: float = 0.15
+    footer_buff: float = 0.2
 
 
 class Motion(BaseModel):

@@ -11,8 +11,17 @@ def test_dastimator_palette_background() -> None:
     assert presets.DASTIMATOR_DARK.palette.background == "#242424"
 
 
-def test_definition_environment_seeded_from_dastimator() -> None:
-    assert presets.DASTIMATOR_DARK.latex.environments["definition"] == "{minipage}{8cm}"
+def test_dastimator_latex_has_no_legacy_environments() -> None:
+    """The ``{minipage}{8cm}`` env moved from the theme into ``TexPage`` --
+    the LaTeX profile no longer carries it. Tests guard against regression
+    that would split the same magic string across multiple sources again.
+    """
+    assert "definition" not in presets.DASTIMATOR_DARK.latex.environments
+
+
+def test_chrome_buffs_have_sensible_defaults() -> None:
+    assert presets.DASTIMATOR_DARK.spacing.header_buff > 0
+    assert presets.DASTIMATOR_DARK.spacing.footer_buff > 0
 
 
 def test_preamble_contains_compact_display() -> None:

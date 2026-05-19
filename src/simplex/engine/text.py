@@ -1,13 +1,19 @@
 """Semantic Tex variants and a shape-matching color helper.
 
-Classes (BodyText, Caption, Definition) inherit from `manim.Tex` so users get
-`isinstance` checks, per-class `set_default(...)`, and the rest of Manim's API
-without any wrapping. They pick up theme defaults at construction time via
-`get_active_theme()`.
+Classes (``Caption``, ``TexPage``) inherit from :class:`manim.Tex` so users
+get ``isinstance`` checks, per-class ``set_default(...)``, and the rest of
+Manim's API without any wrapping. They pick up theme defaults at construction
+time via :func:`get_active_theme`.
+
+Plain :class:`manim.Tex` already carries the theme's body font size + color
+through :func:`simplex.engine.defaults.apply_theme_defaults` — use it for body
+paragraphs. ``Caption`` is the smaller variant for annotations; ``TexPage``
+wraps content in a fixed-width ``{minipage}{<width>cm}`` environment for long
+prose.
 """
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from manim import MathTex, Tex, TransformMatchingShapes, VMobject
@@ -15,21 +21,13 @@ from manim import MathTex, Tex, TransformMatchingShapes, VMobject
 from simplex.theme.context import get_active_theme
 
 
-class BodyText(Tex):
-    """Tex sized for body paragraphs (theme.typography.body).
-
-    Authors write inline math the usual way: ``BodyText(r\"$E=mc^2$ is...\")``.
-    """
-
-    def __init__(self, *parts: str, **kwargs: Any) -> None:
-        theme = get_active_theme()
-        kwargs.setdefault("font_size", theme.typography.body)
-        kwargs.setdefault("color", theme.palette.font)
-        super().__init__(*parts, **kwargs)
+def _minipage_env(width_cm: float) -> str:
+    """Render the LaTeX ``tex_environment`` string for a fixed-width minipage."""
+    return f"{{minipage}}{{{width_cm}cm}}"
 
 
 class Caption(Tex):
-    """Tex sized for captions / annotations (theme.typography.caption)."""
+    """Tex sized for captions / annotations (``theme.typography.caption``)."""
 
     def __init__(self, *parts: str, **kwargs: Any) -> None:
         theme = get_active_theme()
@@ -38,21 +36,28 @@ class Caption(Tex):
         super().__init__(*parts, **kwargs)
 
 
-class Definition(Tex):
-    """Tex wrapped in the theme's ``definition`` environment.
+class TexPage(Tex):
+    """Tex wrapped in a fixed-width ``{minipage}`` so long prose stays bounded.
 
-    DASTIMATOR_DARK seeds this to ``{minipage}{8cm}`` so long prose stays
-    inside a fixed width. Override at the theme level, not on the call site::
+    The default page width is **8 cm**, matching the historical
+    ``Definition`` mobject. Override per-instance::
 
-        Theme(..., latex=LatexProfile(environments={\"definition\": \"{minipage}{10cm}\"}))
+        TexPage("…", width_cm=10.0)
+
+    Or per-subclass (useful for a deck-wide "wide page" variant)::
+
+        class WidePage(TexPage):
+            width_cm = 12.0
     """
 
-    def __init__(self, *parts: str, **kwargs: Any) -> None:
+    width_cm: ClassVar[float] = 8.0
+
+    def __init__(self, *parts: str, width_cm: float | None = None, **kwargs: Any) -> None:
         theme = get_active_theme()
-        env = theme.latex.environments.get("definition", "{minipage}{8cm}")
+        resolved_width = self.width_cm if width_cm is None else width_cm
         kwargs.setdefault("font_size", theme.typography.body)
         kwargs.setdefault("color", theme.palette.font)
-        kwargs.setdefault("tex_environment", env)
+        kwargs.setdefault("tex_environment", _minipage_env(resolved_width))
         super().__init__(*parts, **kwargs)
 
 

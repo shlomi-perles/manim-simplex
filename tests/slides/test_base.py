@@ -12,7 +12,7 @@ pytest.importorskip("manim")
 pytest.importorskip("manim_slides")
 
 from simplex.section import SimplexSectionType
-from simplex.slides.base import BaseSlide
+from simplex.slides.base import BaseSlide, _pretty_class_name
 
 
 class _MiniSlide:
@@ -83,3 +83,14 @@ def test_explicit_sub_section_type_before_any_main_still_honored() -> None:
     stub = _MiniSlide()
     out = _resolve(stub, None, section_type=SimplexSectionType.SUB)
     assert out is SimplexSectionType.SUB
+
+
+def test_pretty_class_name_splits_capital_runs() -> None:
+    """Auto-promoted slide names get spaces between PascalCase boundaries."""
+    assert _pretty_class_name("DFSLecture") == "DFS Lecture"
+    assert _pretty_class_name("ImplementBFSSlide") == "Implement BFS Slide"
+    assert _pretty_class_name("Title") == "Title"
+    assert _pretty_class_name("HelloSlide") == "Hello Slide"
+    assert _pretty_class_name("BFS") == "BFS"
+    # Digit/uppercase boundaries also get a space.
+    assert _pretty_class_name("Section2Intro") == "Section2 Intro"

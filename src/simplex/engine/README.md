@@ -20,7 +20,7 @@ Cross-package types live one level up:
 
 ## Submodules (import directly to keep `simplex.engine` cheap)
 
-- `engine.text` -- `BodyText`, `Caption`, `Definition`; `color_tex(eq, t2c)`; `search_shape_in_text`
+- `engine.text` -- `Caption`, `TexPage` (fixed-width minipage; `width_cm` kwarg / class attr); `color_tex(eq, t2c)`; `search_shape_in_text`. Body-sized paragraphs use plain `manim.Tex` -- `apply_theme_defaults` already sets `font_size=theme.typography.body`.
 - `engine.code` -- `code_block`, `highlight_code_lines`, `code_explain`, `transform_code_lines`; `DarculaStyle`, `register_darcula`; `HighlightResult`
 - `engine.geometry` -- `get_convex_hull_polygon`, `get_surrounding_rectangle`, `get_frame_center`, `Vcis`, `Arc3d`, `SurroundingRectangleUnion`
 - `engine.glyph_map` -- `TransformByGlyphMap` (glyph-indexed Tex transitions)
