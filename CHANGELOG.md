@@ -9,9 +9,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - `TexPage` mobject — fixed-width minipage helper. Width is configurable
-  via the ``width_cm`` kwarg (default 8.0) or by overriding the class
+  via the ``width_cm`` kwarg (default 20.0) or by overriding the class
   attribute on a subclass. Replaces the old ``Definition`` mobject; the
-  hardcoded ``{minipage}{8cm}`` literal no longer appears in presets or
+  hardcoded minipage literal no longer appears in presets or
   tests.
 - `Region.split(axis, k)` — divide a region into ``k`` sub-regions
   along a cardinal direction. Each piece keeps the perpendicular extent

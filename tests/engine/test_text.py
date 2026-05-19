@@ -16,10 +16,10 @@ def test_caption_uses_caption_font_size() -> None:
         assert mob.font_size == theme.typography.caption
 
 
-def test_tex_page_default_width_is_8cm() -> None:
+def test_tex_page_default_width_is_20cm() -> None:
     with active_theme(presets.DASTIMATOR_DARK):
         mob = TexPage("body")
-        assert mob.tex_environment == "{minipage}{8.0cm}"
+        assert mob.tex_environment == "{minipage}{20.0cm}"
 
 
 def test_tex_page_width_cm_kwarg_overrides_default() -> None:

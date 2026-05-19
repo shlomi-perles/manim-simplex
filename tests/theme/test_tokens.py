@@ -12,7 +12,7 @@ def test_dastimator_palette_background() -> None:
 
 
 def test_dastimator_latex_has_no_legacy_environments() -> None:
-    """The ``{minipage}{8cm}`` env moved from the theme into ``TexPage`` --
+    """The ``{minipage}{20cm}`` env moved from the theme into ``TexPage`` --
     the LaTeX profile no longer carries it. Tests guard against regression
     that would split the same magic string across multiple sources again.
     """

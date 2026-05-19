@@ -39,18 +39,17 @@ class Caption(Tex):
 class TexPage(Tex):
     """Tex wrapped in a fixed-width ``{minipage}`` so long prose stays bounded.
 
-    The default page width is **8 cm**, matching the historical
-    ``Definition`` mobject. Override per-instance::
+    The default page width is **20 cm**. Override per-instance::
 
-        TexPage("…", width_cm=10.0)
+        TexPage("…", width_cm=12.0)
 
     Or per-subclass (useful for a deck-wide "wide page" variant)::
 
         class WidePage(TexPage):
-            width_cm = 12.0
+            width_cm = 16.0
     """
 
-    width_cm: ClassVar[float] = 8.0
+    width_cm: ClassVar[float] = 20.0
 
     def __init__(self, *parts: str, width_cm: float | None = None, **kwargs: Any) -> None:
         theme = get_active_theme()
