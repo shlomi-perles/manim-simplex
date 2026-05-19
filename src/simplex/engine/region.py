@@ -6,11 +6,14 @@ The region API speaks in Manim's direction vectors (``UP``, ``DR``, ``ORIGIN``,
 """
 
 from collections.abc import Iterable
+from numbers import Real
 from typing import Self
 
 import numpy as np
 from manim import Mobject
 from pydantic import BaseModel, ConfigDict
+
+type EdgeValue = float | np.ndarray | Iterable[float] | Mobject
 
 
 def _as_dir(anchor: np.ndarray | Iterable[float]) -> np.ndarray:
@@ -29,6 +32,18 @@ def _as_dir(anchor: np.ndarray | Iterable[float]) -> np.ndarray:
             f"anchor components must be in {{-1, 0, 1}} (a Manim direction); got {arr.tolist()}"
         )
     return np.sign(arr)
+
+
+def _edge_coordinate(value: EdgeValue, axis: int, getter_name: str) -> float:
+    if isinstance(value, Mobject):
+        value = getattr(value, getter_name)()
+    if isinstance(value, Real):
+        return float(value)
+
+    point = np.asarray(value, dtype=float)
+    if point.shape != (3,):
+        raise ValueError(f"edge point must be a 3D point, got shape {point.shape}")
+    return float(point[axis])
 
 
 class Region(BaseModel):
@@ -96,19 +111,25 @@ class Region(BaseModel):
     def update(
         self,
         *,
-        top: float | None = None,
-        bottom: float | None = None,
-        left: float | None = None,
-        right: float | None = None,
+        top: EdgeValue | None = None,
+        bottom: EdgeValue | None = None,
+        left: EdgeValue | None = None,
+        right: EdgeValue | None = None,
     ) -> None:
+        """Update region edges from floats, points, or neighbouring mobjects.
+
+        Point values contribute their relevant coordinate: x for left/right,
+        y for top/bottom. Mobjects contribute the edge facing this region, then
+        use the same coordinate rule.
+        """
         if top is not None:
-            self.top = top
+            self.top = _edge_coordinate(top, 1, "get_bottom")
         if bottom is not None:
-            self.bottom = bottom
+            self.bottom = _edge_coordinate(bottom, 1, "get_top")
         if left is not None:
-            self.left = left
+            self.left = _edge_coordinate(left, 0, "get_right")
         if right is not None:
-            self.right = right
+            self.right = _edge_coordinate(right, 0, "get_left")
 
     def shrink(
         self,

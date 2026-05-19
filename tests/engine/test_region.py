@@ -23,6 +23,46 @@ def test_shrink_top_moves_center_down() -> None:
     assert r.center[1] < 0.0
 
 
+def test_update_keeps_float_behavior() -> None:
+    r = Region(top=2.0, bottom=-2.0, left=-3.0, right=3.0)
+    r.update(top=1.5, bottom=-1.5, left=-2.5, right=2.5)
+    assert (r.top, r.bottom, r.left, r.right) == (1.5, -1.5, -2.5, 2.5)
+
+
+def test_update_extracts_relevant_axis_from_points() -> None:
+    r = Region(top=2.0, bottom=-2.0, left=-3.0, right=3.0)
+    r.update(
+        top=np.array([99.0, 1.5, 0.0]),
+        bottom=np.array([99.0, -1.5, 0.0]),
+        left=np.array([-2.5, 99.0, 0.0]),
+        right=np.array([2.5, 99.0, 0.0]),
+    )
+    assert (r.top, r.bottom, r.left, r.right) == (1.5, -1.5, -2.5, 2.5)
+
+
+def test_update_uses_mobject_inner_edges() -> None:
+    from manim import Square
+
+    top_ref = Square(side_length=2.0).move_to(np.array([0.0, 5.0, 0.0]))
+    bottom_ref = Square(side_length=2.0).move_to(np.array([0.0, -5.0, 0.0]))
+    left_ref = Square(side_length=2.0).move_to(np.array([-5.0, 0.0, 0.0]))
+    right_ref = Square(side_length=2.0).move_to(np.array([5.0, 0.0, 0.0]))
+
+    r = Region(top=2.0, bottom=-2.0, left=-3.0, right=3.0)
+    r.update(top=top_ref, bottom=bottom_ref, left=left_ref, right=right_ref)
+
+    assert r.top == pytest.approx(top_ref.get_bottom()[1])
+    assert r.bottom == pytest.approx(bottom_ref.get_top()[1])
+    assert r.left == pytest.approx(left_ref.get_right()[0])
+    assert r.right == pytest.approx(right_ref.get_left()[0])
+
+
+def test_update_rejects_non_3d_point() -> None:
+    r = Region(top=2.0, bottom=-2.0, left=-3.0, right=3.0)
+    with pytest.raises(ValueError, match="3D point"):
+        r.update(top=np.array([1.0, 2.0]))
+
+
 def test_reset_restores_full_frame() -> None:
     r = Region.full_frame()
     r.shrink(top=1.0, bottom=0.5, left=0.25, right=0.25)
