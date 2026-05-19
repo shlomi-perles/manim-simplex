@@ -31,7 +31,7 @@ DASTIMATOR_DARK: Theme = Theme(
     latex=LatexProfile(preamble=_COMPACT_DISPLAY_PREAMBLE),
     web_palette=WebPalette(
         accent="#FFD700",
-        background="#242424",
+        background="#2b2b2b",
         surface="#2D2D2D",
         text_primary="#FFFFFF",
         text_muted="#A0A0A0",

@@ -10,3 +10,9 @@ def test_render_web_css_is_variables_only() -> None:
     assert "--simplex-bg: #123456" in css
     assert "body {" not in css
     assert ".reveal" not in css
+
+
+def test_default_web_background_matches_portal_chrome() -> None:
+    css = render_web_css(WebPalette())
+
+    assert "--simplex-bg: #2b2b2b" in css

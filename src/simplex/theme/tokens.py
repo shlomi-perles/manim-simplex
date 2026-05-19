@@ -83,7 +83,7 @@ class WebPalette(BaseModel):
 
     model_config = ConfigDict(frozen=True)
     accent: str = "#FFD700"
-    background: str = "#242424"
+    background: str = "#2b2b2b"
     surface: str = "#2D2D2D"
     text_primary: str = "#FFFFFF"
     text_muted: str = "#A0A0A0"
