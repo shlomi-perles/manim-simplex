@@ -13,7 +13,7 @@ from typing import Any, cast
 
 import numpy as np
 from manim import (
-    DOWN,
+    RIGHT,
     UP,
     Animation,
     AnimationGroup,
@@ -30,21 +30,21 @@ from manim import (
     Write,
 )
 
+from simplex.engine.region import Region
+from simplex.engine.scaling import scale_to_fit
 from simplex.mobjects.outline import OutlineProgressBar
 from simplex.section import SimplexSectionType
 from simplex.slides.base import BaseSlide
+from simplex.theme.context import get_active_theme
 
 type VisualAnimation = Animation | Callable[[Mobject], Animation]
 
 _DEFAULT_PROGRESS_Y_FRACTION = 0.2
-_TITLE_BUFF = 0.35
 _CONTENT_BUFF = 0.35
 _LABEL_BUFF = 0.2
 _THUMBNAIL_BUFF = 0.15
-_FEATURE_VISUAL_WIDTH_FRACTION = 0.55
-_FEATURE_VISUAL_HEIGHT_FRACTION = 0.85
 _LABEL_WIDTH_FRACTION = 0.9
-_THUMBNAIL_WIDTH_FRACTION = 0.5
+_THUMBNAIL_WIDTH_FRACTION = 0.3
 
 
 @dataclass(slots=True)
@@ -117,9 +117,11 @@ class OutlineScene(BaseSlide):
         self.dots: VGroup
         self.compact_mobjects: Group
         self.initial_mobjects: Group
+        self._labels_are_fit = False
 
     def construct(self) -> None:
         self.progress_bar = self.make_progress_bar()
+        self._fit_all_labels()
         self.compact_mobjects = Group()
         self.initial_mobjects = Group(self.progress_bar)
 
@@ -198,7 +200,7 @@ class OutlineScene(BaseSlide):
         if part.visual is not None:
             part.visual.generate_target()
             target = cast(Mobject, cast(Any, part.visual).target)
-            self._place_feature_visual(target, part)
+            self._place_feature_visual(target, part, exclude_compact=part.visual)
             animations.append(MoveToTarget(part.visual))
         self.play(*animations)
         self.fade_outline(part.title)
@@ -249,35 +251,41 @@ class OutlineScene(BaseSlide):
             self._remember_compact(part.visual)
 
     def _place_title(self, part: OutlinePart) -> None:
-        self._fit_to_width(part.title, self.region.width * 0.9)
+        self._set_font_size(part.title, get_active_theme().typography.h1)
+        scale_to_fit(part.title, len_x=self.region.width * 0.9, max_scale=1.0)
         if part.visual is not None:
-            self.region.place(part.title, UP, buff=_TITLE_BUFF)
+            part.title.to_edge(UP)
             return
         content_center_y = (self.region.top + self.dots.get_top()[1]) / 2
         part.title.move_to(np.array([self.region.center[0], content_center_y, 0.0]))
 
-    def _place_feature_visual(self, visual: Mobject, part: OutlinePart) -> None:
-        top = part.title.get_bottom()[1] - _CONTENT_BUFF
-        bottom = self.dots.get_top()[1] + _CONTENT_BUFF
-        if top <= bottom:
-            top = self.region.top - _TITLE_BUFF
-            bottom = self.dots.get_top()[1] + _CONTENT_BUFF
-
-        self._fit_to_box(
+    def _place_feature_visual(
+        self,
+        visual: Mobject,
+        part: OutlinePart,
+        *,
+        exclude_compact: Mobject | None = None,
+    ) -> None:
+        feature_region = self._feature_region(part, exclude_compact=exclude_compact)
+        scale_to_fit(
             visual,
-            max_width=self.region.width
-            * _FEATURE_VISUAL_WIDTH_FRACTION
-            * part.feature_visual_scale,
-            max_height=(top - bottom) * _FEATURE_VISUAL_HEIGHT_FRACTION * part.feature_visual_scale,
+            len_x=feature_region.width,
+            len_y=feature_region.height,
+            scaleback=part.feature_visual_scale,
         )
-        visual.move_to(np.array([self.region.center[0], (top + bottom) / 2, 0.0]))
+        feature_region.place(visual)
 
     def _place_label(self, index: int, label: Mobject) -> None:
-        label.next_to(self.dots[index], DOWN, buff=_LABEL_BUFF)
-        self._fit_to_width(label, self._cell_width() * _LABEL_WIDTH_FRACTION)
+        self._fit_all_labels()
+        label.move_to(self._label_point(index))
 
     def _place_thumbnail(self, index: int, visual: Mobject, scale: float) -> None:
-        self._fit_to_width(visual, self._cell_width() * _THUMBNAIL_WIDTH_FRACTION * scale)
+        thumbnail_extent = self._progress_spacing() * _THUMBNAIL_WIDTH_FRACTION * scale
+        scale_to_fit(
+            visual,
+            len_x=thumbnail_extent,
+            len_y=thumbnail_extent,
+        )
         visual.next_to(self.dots[index], UP, buff=_THUMBNAIL_BUFF)
 
     def _progress_bar_y(self) -> float:
@@ -287,10 +295,77 @@ class OutlineScene(BaseSlide):
             return self.region.bottom + self.region.height * self.progress_y
         return self.region.bottom + self.progress_y
 
-    def _cell_width(self) -> float:
+    def _feature_region(
+        self,
+        part: OutlinePart,
+        *,
+        exclude_compact: Mobject | None = None,
+    ) -> Region:
+        top = part.title.get_bottom()[1] - _CONTENT_BUFF
+        bottom = self._feature_bottom(exclude_compact=exclude_compact) + _CONTENT_BUFF
+        if top <= bottom:
+            bottom = self.progress_bar.get_top()[1] + _CONTENT_BUFF
+        if top <= bottom:
+            bottom = top - 1e-6
+        return Region(top=top, bottom=bottom, left=self.region.left, right=self.region.right)
+
+    def _feature_bottom(self, *, exclude_compact: Mobject | None = None) -> float:
+        bottom = self.progress_bar.get_top()[1]
+        for part in self.parts:
+            visual = part.visual
+            if (
+                visual is None
+                or visual is exclude_compact
+                or visual not in self.compact_mobjects.submobjects
+            ):
+                continue
+            bottom = max(bottom, float(visual.get_top()[1]))
+        return bottom
+
+    def _label_region(self) -> Region:
+        top = self.progress_bar.get_bottom()[1]
+        if top <= self.region.bottom:
+            top = self.region.bottom + 1e-6
+        return Region(
+            top=top,
+            bottom=self.region.bottom,
+            left=self.region.left,
+            right=self.region.right,
+        )
+
+    def _label_point(self, index: int) -> np.ndarray:
+        return self._label_region().linspace(RIGHT, self.part_count)[index]
+
+    def _fit_all_labels(self) -> None:
+        if self._labels_are_fit:
+            return
+
+        label_region = self._label_region()
+        for part in self.parts:
+            scale_to_fit(
+                part.label,
+                len_x=self._progress_spacing() * _LABEL_WIDTH_FRACTION,
+                len_y=label_region.height,
+                buff=_LABEL_BUFF,
+            )
+
+        font_sizes = [
+            float(font_mobject.font_size)
+            for part in self.parts
+            for font_mobject in self._font_mobjects(part.label)
+        ]
+        if font_sizes:
+            font_size = min(font_sizes)
+            for part in self.parts:
+                for font_mobject in self._font_mobjects(part.label):
+                    font_mobject.font_size = font_size
+
+        self._labels_are_fit = True
+
+    def _progress_spacing(self) -> float:
         if self.progress_bar.spacing > 0:
             return self.progress_bar.spacing
-        return self.region.width / max(2, self.part_count + 1)
+        return self.region.width
 
     def _enter(self, mob: Mobject) -> Any:
         return Write(mob) if isinstance(mob, VMobject) else FadeIn(mob)
@@ -303,16 +378,6 @@ class OutlineScene(BaseSlide):
         if isinstance(title, VMobject) and isinstance(label, VMobject):
             return TransformMatchingShapes(title, label)
         return ReplacementTransform(title, label)
-
-    def _fit_to_width(self, mob: Mobject, max_width: float) -> None:
-        if max_width > 0 and mob.width > max_width:
-            mob.scale_to_fit_width(max_width)
-
-    def _fit_to_box(self, mob: Mobject, *, max_width: float, max_height: float) -> None:
-        if max_height > 0:
-            mob.scale_to_fit_height(max_height)
-        if max_width > 0 and mob.width > max_width:
-            mob.scale_to_fit_width(max_width)
 
     def _remember_initial(self, mob: Mobject) -> None:
         if mob not in self.initial_mobjects.submobjects:
@@ -346,3 +411,16 @@ class OutlineScene(BaseSlide):
                 out.append(mob)
                 seen.add(ident)
         return out
+
+    @staticmethod
+    def _font_mobjects(mob: Mobject) -> list[Any]:
+        return [
+            cast(Any, submob)
+            for submob in mob.get_family()
+            if hasattr(submob, "font_size")
+        ]
+
+    @classmethod
+    def _set_font_size(cls, mob: Mobject, font_size: float) -> None:
+        for font_mobject in cls._font_mobjects(mob):
+            font_mobject.font_size = font_size
