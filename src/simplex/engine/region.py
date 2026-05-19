@@ -177,3 +177,83 @@ class Region(BaseModel):
             if direction[1] < 0:
                 pieces.reverse()
         return pieces
+
+    def linspace(
+        self,
+        axis: np.ndarray | Iterable[float],
+        k: int,
+        *,
+        inset: float = 0.0,
+        include_edges: bool = False,
+        orthogonal: float | None = None,
+    ) -> list[np.ndarray]:
+        """Return ``k`` evenly spaced points along ``axis`` inside this region.
+
+        Default behavior leaves equal margins so the distance from each edge to
+        the nearest point equals the distance between points. Points are centered
+        on the perpendicular axis unless ``orthogonal`` is provided. Ordering
+        follows ``axis`` (RIGHT -> left-to-right, LEFT -> right-to-left,
+        UP -> bottom-to-top, DOWN -> top-to-bottom).
+
+        Args:
+            axis: Cardinal Manim direction (RIGHT/LEFT/UP/DOWN).
+            k: Number of points to return.
+            inset: Extra margin to carve out on both ends before spacing.
+            include_edges: If true, the first/last points sit on the inset edges.
+            orthogonal: Optional fixed coordinate along the perpendicular axis.
+        """
+        if k < 1:
+            raise ValueError(f"k must be >= 1, got {k}")
+        if inset < 0:
+            raise ValueError(f"inset must be >= 0, got {inset}")
+        direction = _as_dir(axis)
+        horizontal = direction[0] != 0
+        vertical = direction[1] != 0
+        if horizontal == vertical:
+            raise ValueError(
+                "axis must be a single cardinal direction (RIGHT/LEFT/UP/DOWN), "
+                f"got {direction.tolist()}"
+            )
+
+        span = self.width if horizontal else self.height
+        usable = span - 2 * inset
+        if usable < 0:
+            raise ValueError(
+                "inset is too large for the region extent; "
+                f"got inset={inset} for span={span}"
+            )
+        if usable == 0 and k > 1:
+            raise ValueError("inset leaves no room for multiple points")
+
+        if horizontal:
+            start = self.left + inset
+            end = self.right - inset
+            other = self.center[1] if orthogonal is None else orthogonal
+            if include_edges:
+                if k == 1:
+                    coords = [start]
+                else:
+                    step = (end - start) / (k - 1)
+                    coords = [start + i * step for i in range(k)]
+            else:
+                step = (end - start) / (k + 1)
+                coords = [start + (i + 1) * step for i in range(k)]
+            points = [np.array([x, other, 0.0]) for x in coords]
+        else:
+            start = self.bottom + inset
+            end = self.top - inset
+            other = self.center[0] if orthogonal is None else orthogonal
+            if include_edges:
+                if k == 1:
+                    coords = [start]
+                else:
+                    step = (end - start) / (k - 1)
+                    coords = [start + i * step for i in range(k)]
+            else:
+                step = (end - start) / (k + 1)
+                coords = [start + (i + 1) * step for i in range(k)]
+            points = [np.array([other, y, 0.0]) for y in coords]
+
+        if direction[0] < 0 or direction[1] < 0:
+            points.reverse()
+        return points

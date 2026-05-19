@@ -119,6 +119,26 @@ def test_split_k_one_returns_copy() -> None:
     assert (p.top, p.bottom, p.left, p.right) == (r.top, r.bottom, r.left, r.right)
 
 
+def test_linspace_right_defaults_to_interior_centers() -> None:
+    r = Region(top=3.0, bottom=0.0, left=0.0, right=4.0)
+    pts = r.linspace(RIGHT, 3)
+    assert [tuple(p[:2]) for p in pts] == [(1.0, 1.5), (2.0, 1.5), (3.0, 1.5)]
+    gaps = np.diff([r.left, *[p[0] for p in pts], r.right])
+    assert list(gaps) == pytest.approx([1.0, 1.0, 1.0, 1.0])
+
+
+def test_linspace_left_reverses_order() -> None:
+    r = Region(top=3.0, bottom=0.0, left=0.0, right=4.0)
+    pts = r.linspace(LEFT, 3)
+    assert [p[0] for p in pts] == [3.0, 2.0, 1.0]
+
+
+def test_linspace_include_edges_returns_endpoints() -> None:
+    r = Region(top=2.0, bottom=-2.0, left=-3.0, right=3.0)
+    pts = r.linspace(RIGHT, 3, include_edges=True)
+    assert [p[0] for p in pts] == [-3.0, 0.0, 3.0]
+
+
 def test_split_rejects_non_cardinal_axis() -> None:
     r = Region.full_frame()
     with pytest.raises(ValueError, match="cardinal direction"):
