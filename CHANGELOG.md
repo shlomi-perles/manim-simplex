@@ -46,10 +46,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `simplex.engine.glyph_map` (`TransformByGlyphMap`) and
   `simplex.engine.ghost_fade` (`GhostSlideFade`). The combined module is
   removed.
-- **BREAKING:** `BaseSlide.next_slide()` no longer auto-promotes the first
-  bare call to a main slide with a `UserWarning`. The first call must
-  carry a `name=` (which marks it as main). A bare `next_slide()` with
-  no preceding main raises `RuntimeError` with a fix-it message.
+- `BaseSlide.next_slide()` still auto-promotes the first bare call to
+  a main slide (named after the scene class), but no longer emits a
+  `UserWarning`. Passing `name=` on the first call still works and only
+  changes the slide's name; the section type is `MAIN` either way.
 - **BREAKING:** `make_chrome` no longer mutates its `Region` argument.
   It returns a `Chrome(mobjects, body_region)` NamedTuple. Callers do
   `chrome = make_chrome(...); self.add_to_canvas(**chrome.mobjects);
@@ -71,8 +71,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `simplex.engine.section_types` module (replaced by `simplex.section`).
 - `simplex.slides.components` subpackage (replaced by `simplex.mobjects`).
 - `simplex.engine.transforms` module (split — see Changed).
-- Auto-promotion + `UserWarning` in `BaseSlide.next_slide()` — fail
-  loudly is better than warn quietly.
+- `UserWarning` on the first bare `BaseSlide.next_slide()` call. Auto-
+  promotion stays (named after the class), just silently.
 
 ## [0.2.0] - 2025-05
 

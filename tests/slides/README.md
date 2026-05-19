@@ -1,8 +1,8 @@
 # tests/slides/
 
 Tests for `simplex.slides`: `BaseSlide.next_slide` section-type
-resolution (no auto-promotion, fail-loudly path) and the `make_chrome`
-purity contract.
+resolution (silent auto-promotion on first bare call, SUB after a named
+main, explicit overrides) and the `make_chrome` purity contract.
 
 ## Conventions
 

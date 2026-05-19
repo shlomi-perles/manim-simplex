@@ -8,9 +8,10 @@ here.
 
 - `BaseSlide` -- `clear_scene(exclude=...)` and a hierarchy-aware `next_slide`:
   - `self.next_slide(name="Foo")` -> **main** slide named `"Foo"`.
+  - `self.next_slide()` as the *first* call -> **main** auto-named
+    after the scene class (silent; the name is the only thing that
+    changes between auto-promotion and an explicit name).
   - `self.next_slide()` after a named main -> **sub-slide** of that main.
-  - `self.next_slide()` *before* any named main -> `RuntimeError`
-    with a fix-it message. No silent auto-promotion.
   - `loop=True` -> the `LOOP` variant; explicit `section_type=` always wins.
 - `make_chrome(theme, region, *, header=..., footer=..., page=...)`
   -- *pure* factory returning a `Chrome(mobjects, body_region)`

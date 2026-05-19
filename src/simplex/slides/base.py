@@ -4,12 +4,11 @@ Theme and Manim defaults are wired in ``simplex.plugin:activate`` (the
 ``manim.plugins`` entry-point) once per render process. What stays in
 ``BaseSlide`` is the slide-hierarchy override:
 
-- ``self.next_slide(name="...")`` -> **main** slide, named.
-- ``self.next_slide()`` after at least one named main -> **sub** of the
-  previous main.
-- ``self.next_slide()`` *before* any named main -> ``RuntimeError`` with a
-  fix-it message. Authors must mark the first slide explicitly; no silent
-  auto-promotion.
+- ``self.next_slide(name="Title")`` -> **main** slide, named ``"Title"``.
+- ``self.next_slide()`` *as the first call* -> auto-promoted to a **main**
+  slide named after the scene class. Silent, no warning -- this is the
+  intended affordance for "I'll let you guess".
+- ``self.next_slide()`` *after a named main* -> **sub** of that main.
 - ``loop=True`` flips to the ``LOOP`` variant; an explicit ``section_type=``
   always wins.
 
@@ -55,9 +54,8 @@ class BaseSlide(Slide):
         resolved = self._resolve_section_type(name, section_type, loop)
 
         if resolved.is_main:
-            # Required by SimplexSectionType.MAIN; section_type-explicit MAIN
-            # without a name is also unambiguous since the user named it the
-            # scene class.
+            # If the caller didn't name it (bare first call, or explicit MAIN
+            # section_type with no name), fall back to the class name.
             if name is None:
                 name = type(self).__name__
             self._current_main = name
@@ -88,14 +86,10 @@ class BaseSlide(Slide):
         # Named call -> MAIN (LOOP variant on loop=True).
         if name is not None:
             return SimplexSectionType.MAIN_LOOP if loop else SimplexSectionType.MAIN
-        # Bare call requires a current main; fail loudly otherwise.
+        # Bare call: if no main has been opened yet, auto-promote to MAIN
+        # named after the class. After the first main, bare = SUB.
         if self._current_main is None:
-            cls_name = type(self).__name__
-            raise RuntimeError(
-                f"{cls_name}.next_slide(): first call must carry a name=, e.g. "
-                f"`self.next_slide(name={cls_name!r})`. Bare next_slide() is a "
-                "sub-slide and needs a preceding named main."
-            )
+            return SimplexSectionType.MAIN_LOOP if loop else SimplexSectionType.MAIN
         return SimplexSectionType.SUB_LOOP if loop else SimplexSectionType.SUB
 
     def clear_scene(self, *, exclude: Iterable[Any] = ()) -> None:

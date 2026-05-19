@@ -1,4 +1,4 @@
-"""BaseSlide section-type resolution -- no auto-promotion, fail-loudly path.
+"""BaseSlide section-type resolution -- auto-promotion to MAIN on first call.
 
 Tests the ``_resolve_section_type`` method directly via a minimal stub
 holding the only state it reads (``_current_main``). This isolates the
@@ -43,6 +43,17 @@ def test_named_call_with_loop_emits_main_loop() -> None:
     assert _resolve(stub, "Theorem", loop=True) is SimplexSectionType.MAIN_LOOP
 
 
+def test_bare_first_call_auto_promotes_to_main() -> None:
+    """First bare call -> MAIN. The forward path names it after the class."""
+    stub = _MiniSlide()
+    assert _resolve(stub, None) is SimplexSectionType.MAIN
+
+
+def test_bare_first_call_with_loop_auto_promotes_to_main_loop() -> None:
+    stub = _MiniSlide()
+    assert _resolve(stub, None, loop=True) is SimplexSectionType.MAIN_LOOP
+
+
 def test_bare_call_after_named_emits_sub() -> None:
     stub = _MiniSlide()
     stub._current_main = "Theorem"
@@ -53,15 +64,6 @@ def test_bare_call_after_named_with_loop_emits_sub_loop() -> None:
     stub = _MiniSlide()
     stub._current_main = "Theorem"
     assert _resolve(stub, None, loop=True) is SimplexSectionType.SUB_LOOP
-
-
-def test_bare_first_call_raises_with_actionable_message() -> None:
-    stub = _MiniSlide()
-    with pytest.raises(RuntimeError) as exc:
-        _resolve(stub, None)
-    msg = str(exc.value)
-    assert "first call must carry a name=" in msg
-    assert "_MiniSlide" in msg
 
 
 def test_explicit_section_type_overrides_inference() -> None:
@@ -76,8 +78,8 @@ def test_explicit_section_type_as_string_works() -> None:
     assert out is SimplexSectionType.MAIN_SKIP
 
 
-def test_explicit_section_type_works_even_without_current_main() -> None:
-    """An explicit section_type kwarg should bypass the 'name required' check."""
+def test_explicit_sub_section_type_before_any_main_still_honored() -> None:
+    """An explicit section_type kwarg short-circuits the auto-promotion path."""
     stub = _MiniSlide()
     out = _resolve(stub, None, section_type=SimplexSectionType.SUB)
     assert out is SimplexSectionType.SUB

@@ -75,15 +75,13 @@ uv run manim-slides render path/to/your_deck/scene.py Hello
 native section JSON. The web builder reconciles that with manim-slides'
 `PresentationConfig` to build a main/sub tree.
 
-- `self.next_slide(name="Title")` -> **MAIN** slide.
+- `self.next_slide(name="Title")` -> **MAIN** slide named `"Title"`.
+- `self.next_slide()` as the *first* call -> **MAIN** slide
+  auto-named after the scene class (no warning).
 - `self.next_slide()` after a named main -> **SUB** slide.
 - `self.next_slide(..., loop=True)` -> the `LOOP` variant.
 - `self.next_slide(..., section_type="simplex.main.skip")` -> explicit
   override always wins.
-
-Calling `self.next_slide()` *before* any named main raises
-`RuntimeError` with a fix-it message -- there is no silent
-auto-promotion. The first call in a scene must be explicit.
 
 ## Theme
 

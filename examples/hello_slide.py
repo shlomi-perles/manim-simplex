@@ -1,8 +1,10 @@
-"""Minimal Simplex deck: one main slide, two sub-stops.
+"""Minimal Simplex deck: one main slide, one sub-stop.
 
 Demonstrates:
-- `BaseSlide.next_slide(name=...)` to open a *main* slide.
-- bare `BaseSlide.next_slide()` for a *sub* slide.
+- `BaseSlide.next_slide()` -- first bare call auto-promotes to a main
+  slide named after the scene class. Pass ``name=`` to override the name.
+- `BaseSlide.next_slide()` -- subsequent bare call -> sub-stop of the
+  current main (RevealJS vertical navigation).
 - `region.place(...)` to position via anchor.
 - `Region` body shrunk by `make_chrome` for a clean header + body band.
 """
@@ -24,9 +26,9 @@ class HelloSlide(BaseSlide):
         eq = MathTex(r"e^{i\pi} + 1 = 0")
         self.region.place(eq, "center")
         self.play(Write(eq))
-        self.next_slide(name="Hello: Euler")
+        self.next_slide()  # first call -> MAIN named "HelloSlide" (auto)
 
         consequence = MathTex(r"\therefore\ \cos\pi + i\sin\pi = -1")
         self.region.place(consequence, "center")
         self.play(Write(consequence))
-        self.next_slide()  # bare -> sub-stop of the Euler main slide
+        self.next_slide()  # bare after first MAIN -> sub-stop
