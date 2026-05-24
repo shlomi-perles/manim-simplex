@@ -6,7 +6,7 @@ import sys
 import types
 
 from pygments.style import Style
-from pygments.token import Comment, Generic, Keyword, Literal, Name
+from pygments.token import Comment, Generic, Keyword, Literal, Name, Operator
 
 
 def register_darcula(style_name: str = "darcula") -> None:
@@ -75,4 +75,5 @@ class DarculaStyle(Style):
         Name.Variable.Global: "#9876AA",
         Name.Variable.Instance: "#9876AA",
         Name.Variable: "#A9B7C6",
+        Operator.Word: "#CC7832 bold",
     }
