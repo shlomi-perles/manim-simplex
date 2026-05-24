@@ -66,10 +66,16 @@ class _DefaultRegistry:
             VMobject,
         )
 
+        from simplex.mobjects.paper import DismissPaper, Paper
+
         def fade_with_drift(m: Any, **kw: Any) -> Any:
             return FadeOut(m, shift=0.1 * DOWN, **kw)
 
+        def paper_exit(m: Any, **kw: Any) -> Any:
+            return DismissPaper(m, **kw)
+
         return {
+            Paper: paper_exit,
             Tex: Unwrite,
             MathTex: Unwrite,
             Text: Unwrite,
