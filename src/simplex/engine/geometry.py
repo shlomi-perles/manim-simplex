@@ -37,10 +37,39 @@ def get_convex_hull_polygon(
 
     Uses Manim's built-in :class:`~.ConvexHull` (added in 0.19.0), so no scipy.
     """
-    flat = [(float(p[0]), float(p[1]), 0.0) for p in points]
+    flat = _outer_hull_points(points)
     hull = ConvexHull(*flat, **kwargs)
     hull.round_corners(radius=round_radius)
     return hull
+
+
+def _outer_hull_points(points: np.ndarray) -> list[tuple[float, float, float]]:
+    """Return outer 2D hull vertices in stable order, discarding interior points."""
+    pts = sorted({(float(p[0]), float(p[1])) for p in points})
+    if len(pts) <= 1:
+        return [(x, y, 0.0) for x, y in pts]
+
+    def cross(
+        origin: tuple[float, float],
+        a: tuple[float, float],
+        b: tuple[float, float],
+    ) -> float:
+        return (a[0] - origin[0]) * (b[1] - origin[1]) - (a[1] - origin[1]) * (b[0] - origin[0])
+
+    lower: list[tuple[float, float]] = []
+    for pt in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], pt) <= 0:
+            lower.pop()
+        lower.append(pt)
+
+    upper: list[tuple[float, float]] = []
+    for pt in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], pt) <= 0:
+            upper.pop()
+        upper.append(pt)
+
+    hull = lower[:-1] + upper[:-1]
+    return [(x, y, 0.0) for x, y in hull]
 
 
 def get_surrounding_rectangle(
@@ -185,14 +214,16 @@ class SurroundingRectangleUnion(VGroup):
         polygons: list[list[np.ndarray]] = []
         current: list[np.ndarray] = []
         for bez in beziers:
+            first = np.asarray(bez[0], dtype=float)
+            last = np.asarray(bez[-1], dtype=float)
             if not current:
-                current.append(bez[0])
-            elif np.allclose(bez[-1], current[0]):
-                current.append(bez[0])
+                current.append(first)
+            elif np.allclose(last, current[0]):
+                current.append(first)
                 polygons.append(current)
                 current = []
             else:
-                current.append(bez[0])
+                current.append(first)
         self._polygons = polygons
 
         if unbuff > 0:

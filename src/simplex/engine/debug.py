@@ -8,7 +8,7 @@ level of submobject nesting and rotates through colors so multi-string
 useful when tuning `next_to` / alignment.
 """
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from manim import (
@@ -30,8 +30,9 @@ from manim import (
     index_labels,
     turn_animation_into_updater,
 )
+from manim.utils.color import ParsableManimColor
 
-_RAINBOW: tuple[str, ...] = (RED_D, ORANGE, YELLOW, GREEN_D, BLUE_D, PURPLE)
+_RAINBOW: tuple[ParsableManimColor, ...] = (RED_D, ORANGE, YELLOW, GREEN_D, BLUE_D, PURPLE)
 
 
 def bounding_box(
@@ -47,8 +48,11 @@ def bounding_box(
     add a dot at the bounding-box center.
     """
     if always:
-        return always_redraw(
-            lambda: bounding_box(mobject, always=False, include_center=include_center)
+        return cast(
+            VGroup,
+            always_redraw(
+                lambda: bounding_box(mobject, always=False, include_center=include_center)
+            ),
         )
 
     from manim import DL, DR, LEFT, ORIGIN, RIGHT, UL, UP, UR
@@ -83,7 +87,7 @@ def bounding_box(
 def indexx_labels(
     mobject: Mobject,
     *,
-    colors: tuple[str, ...] = _RAINBOW,
+    colors: tuple[ParsableManimColor, ...] = _RAINBOW,
     label_height: float | None = None,
     **kwargs: Any,
 ) -> VGroup:
@@ -93,14 +97,15 @@ def indexx_labels(
     submobject's glyph indices get their own color so a long label like
     `MathTex("\\sin", "(", "x", ")")` becomes visually parseable.
     """
-    if label_height is None:
-        label_height = max(mobject.get_height() / 8, 0.18)
+    computed_label_height = (
+        max(mobject.get_height() / 8, 0.18) if label_height is None else label_height
+    )
     return VGroup(
         *(
             index_labels(
                 mobject[i],
                 color=colors[i % len(colors)],
-                label_height=label_height,
+                label_height=computed_label_height,
                 **kwargs,
             )
             for i in range(len(mobject.submobjects))

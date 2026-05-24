@@ -15,7 +15,7 @@ import functools
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from manim import (
     LEFT,
@@ -118,11 +118,11 @@ def highlight_code_lines(
     indicated: list[Any] = []
     for line_no, line in enumerate(code_lines, start=1):
         if line_no in selected:
-            fade_anims.append(line.animate.set_fill(opacity=1.0))
+            fade_anims.append(cast(Animation, line.animate.set_fill(opacity=1.0)))
             if indicate:
                 indicated.append(line)
         else:
-            fade_anims.append(line.animate.set_fill(opacity=off_opacity))
+            fade_anims.append(cast(Animation, line.animate.set_fill(opacity=off_opacity)))
 
     fade_group = AnimationGroup(*fade_anims, **kwargs)
     if not indicate:
@@ -364,12 +364,14 @@ def _glyph_span(
     start: int | None = None
     end: int | None = None
     for i in range(char_start, min(char_end, len(glyph_for_char))):
-        if glyph_for_char[i] is not None:
-            start = glyph_for_char[i]
+        glyph_idx = glyph_for_char[i]
+        if glyph_idx is not None:
+            start = glyph_idx
             break
     for i in range(min(char_end, len(glyph_for_char)) - 1, char_start - 1, -1):
-        if glyph_for_char[i] is not None:
-            end = glyph_for_char[i] + 1
+        glyph_idx = glyph_for_char[i]
+        if glyph_idx is not None:
+            end = glyph_idx + 1
             break
     return start, end
 
@@ -398,15 +400,16 @@ def _refit_background(code: Code) -> None:
     # before the replacement and re-add them after.
     decorations = list(background.submobjects)
     background.remove(*decorations)
-    replacement = SurroundingRectangle(
-        inner,
-        buff=getattr(background, "buff", 0.3),
-        color=background.get_stroke_color(),
-        stroke_width=background.get_stroke_width(),
-        fill_color=background.get_fill_color(),
-        fill_opacity=background.get_fill_opacity(),
-        corner_radius=getattr(background, "corner_radius", 0.0),
-    )
+    replacement_config: dict[str, Any] = {
+        "buff": getattr(background, "buff", 0.3),
+        "stroke_width": background.get_stroke_width(),
+        "fill_opacity": background.get_fill_opacity(),
+        "corner_radius": getattr(background, "corner_radius", 0.0),
+    }
+    if (stroke_color := background.get_stroke_color()) is not None:
+        replacement_config["color"] = stroke_color
+    replacement_config["fill_color"] = background.get_fill_color()
+    replacement = SurroundingRectangle(inner, **replacement_config)
     background.become(replacement)
     if decorations:
         background.add(*decorations)

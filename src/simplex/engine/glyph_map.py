@@ -13,7 +13,7 @@ cleanest way to shift sub-animations within an ``AnimationGroup``: Manim
 updaters, not sub-animations of an ``AnimationGroup``.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from manim import (
     BLACK,
@@ -32,6 +32,7 @@ from manim import (
     index_labels,
     smooth,
 )
+from manim.utils.color import ParsableManimColor
 
 
 def _is_animation_class(value: Any) -> bool:
@@ -100,7 +101,7 @@ class TransformByGlyphMap(AnimationGroup):
     See the showcase deck for runnable examples.
     """
 
-    def __init__(
+    def __init__(  # pyright: ignore[reportInconsistentConstructor]
         self,
         mobA: VMobject,  # noqa: N803 -- mirrors source paper
         mobB: VMobject,  # noqa: N803
@@ -118,8 +119,8 @@ class TransformByGlyphMap(AnimationGroup):
         auto_morph: bool = False,
         auto_resolve_kwargs: dict[str, Any] | None = None,
         show_indices: bool = False,
-        A_index_labels_color: str = RED_D,  # noqa: N803
-        B_index_labels_color: str = BLUE_D,  # noqa: N803
+        A_index_labels_color: ParsableManimColor = RED_D,  # noqa: N803
+        B_index_labels_color: ParsableManimColor = BLUE_D,  # noqa: N803
         index_label_height: float = 0.2,
         printing: bool = False,
         **kwargs: Any,
@@ -142,10 +143,10 @@ class TransformByGlyphMap(AnimationGroup):
 
         a: VMobject = mobA.copy() if from_copy else mobA
         for i in a_path:
-            a = a[i]
+            a = cast(VMobject, a[i])
         b: VMobject = mobB
         for i in b_path:
-            b = b[i]
+            b = cast(VMobject, b[i])
 
         self.animations: list[Animation] = []
         self.mentioned_from: list[int] = []
@@ -214,10 +215,10 @@ class TransformByGlyphMap(AnimationGroup):
         opts = _interpret_delay(opts)
         if introducer is FadeIn and self.shift_fades and "shift" not in opts:
             opts["shift"] = b.get_center() - a.get_center()
-        targets = (
-            [b[i] for i in to_slot]
+        targets: list[VMobject] = (
+            [cast(VMobject, b[i]) for i in to_slot]
             if self.introduce_individually
-            else [VGroup(*(b[i] for i in to_slot))]
+            else [VGroup(*(cast(VMobject, b[i]) for i in to_slot))]
         )
         for mob in targets:
             self.animations.append(introducer(mob, **opts))
@@ -235,10 +236,10 @@ class TransformByGlyphMap(AnimationGroup):
         opts = _interpret_delay(opts)
         if remover is FadeOut and self.shift_fades and "shift" not in opts:
             opts["shift"] = b.get_center() - a.get_center()
-        targets = (
-            [a[i] for i in from_slot]
+        targets: list[VMobject] = (
+            [cast(VMobject, a[i]) for i in from_slot]
             if self.remove_individually
-            else [VGroup(*(a[i] for i in from_slot))]
+            else [VGroup(*(cast(VMobject, a[i]) for i in from_slot))]
         )
         for mob in targets:
             self.animations.append(remover(mob, **opts))
@@ -252,13 +253,15 @@ class TransformByGlyphMap(AnimationGroup):
         to_slot: list[int],
         opts: dict[str, Any],
     ) -> None:
-        transformer: type[Animation] = opts.pop("transform_class", self.default_transformer)
+        transformer = opts.pop("transform_class", self.default_transformer)
         opts = _interpret_delay(opts)
         # Indices already used by an earlier entry need a copy so the prior
         # animation isn't disturbed when this one grabs the same glyph.
-        from_mob = VGroup(*(a[i].copy() if i in self.mentioned_from else a[i] for i in from_slot))
-        to_mob = VGroup(*(b[i] for i in to_slot))
-        self.animations.append(transformer(from_mob, to_mob, **opts))
+        from_mob = VGroup(
+            *(cast(VMobject, a[i].copy() if i in self.mentioned_from else a[i]) for i in from_slot)
+        )
+        to_mob = VGroup(*(cast(VMobject, b[i]) for i in to_slot))
+        self.animations.append(cast(Animation, transformer(from_mob, to_mob, **opts)))
         self.mentioned_from.extend(from_slot)
         self.mentioned_to.extend(to_slot)
 
@@ -283,8 +286,8 @@ class TransformByGlyphMap(AnimationGroup):
         a: VMobject,
         b: VMobject,
         label_height: float,
-        a_color: str,
-        b_color: str,
+        a_color: ParsableManimColor,
+        b_color: ParsableManimColor,
     ) -> None:
         b.next_to(a, DOWN)
         labels_a = index_labels(

@@ -122,6 +122,7 @@ def test_code_with_math_preserves_background_padding() -> None:
     block = code_with_math(
         "for i in $1..n$:\n    print($i$)",
         language="python",
+        paragraph_config={"font": "Monospace"},
     )
     # ``Code`` defaults to ``buff=0.3``; the refit must keep that buff so
     # the inline-math block visually matches a plain ``code_block``.

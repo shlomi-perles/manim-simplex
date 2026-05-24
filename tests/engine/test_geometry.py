@@ -69,15 +69,15 @@ def test_arc3d_produces_segments_points() -> None:
 
 
 def test_surrounding_rectangle_union_overlap_yields_one_polygon() -> None:
-    a = Square(side_length=1.0).move_to([0.0, 0.0, 0.0])
-    b = Square(side_length=1.0).move_to([0.5, 0.0, 0.0])
+    a = Square(side_length=1.0).move_to((0.0, 0.0, 0.0))
+    b = Square(side_length=1.0).move_to((0.5, 0.0, 0.0))
     union = SurroundingRectangleUnion(a, b, buff=0.2)
     # Overlapping rects merge into one polygon.
     assert len(union) == 1
 
 
 def test_surrounding_rectangle_union_disjoint_yields_two_polygons() -> None:
-    a = Square(side_length=0.5).move_to([0.0, 0.0, 0.0])
-    b = Square(side_length=0.5).move_to([5.0, 0.0, 0.0])
+    a = Square(side_length=0.5).move_to((0.0, 0.0, 0.0))
+    b = Square(side_length=0.5).move_to((5.0, 0.0, 0.0))
     union = SurroundingRectangleUnion(a, b, buff=0.05)
     assert len(union) == 2
