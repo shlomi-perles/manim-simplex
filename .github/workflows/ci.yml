@@ -24,14 +24,14 @@ jobs:
         cache-dependency-glob: uv.lock
     - name: Pin Python ${{ matrix.python-version }}
       run: uv python pin ${{ matrix.python-version }}
-    - run: uv sync --all-extras
-    - run: uv run ruff check .
-    - run: uv run ruff format --check .
-    - run: uv run basedpyright
-    - run: uv run pytest -q
+    - run: uv sync --locked --all-extras
+    - run: uv run --locked ruff check .
+    - run: uv run --locked ruff format --check .
+    - run: uv run --locked basedpyright
+    - run: uv run --locked pytest -q
     - run: uv build
     - run: uvx twine check dist/*
     - name: Plugin import smoke
-      run: uv run python -c "import simplex.plugin; simplex.plugin.activate(); print('ok')"
+      run: uv run --locked python -c "import simplex.plugin; simplex.plugin.activate(); print('ok')"
     - name: Plugin discovery smoke
-      run: uv run manim plugins -l | tee /dev/stderr | grep -q '^\s*•\s*simplex\b'
+      run: uv run --locked manim plugins -l | tee /dev/stderr | grep -q '^\s*•\s*simplex\b'
