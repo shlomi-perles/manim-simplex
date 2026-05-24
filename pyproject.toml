@@ -33,6 +33,7 @@ dependencies = [
   "manim-slides>=5.1.7",
   "pydantic>=2.7",
   "pygments>=2.18",
+  "pymupdf>=1.27.2.3",
 ]
 description = "Manim plugin: theme tokens, mobjects, slide hierarchy, deck manifest schema."
 keywords = [
