@@ -109,8 +109,28 @@ def test_paper_exit_animation_is_dismiss(sample_pdf) -> None:
 
 
 def test_paper_without_shadow(sample_pdf) -> None:
-    paper = Paper(sample_pdf, pages=2, dpi=72, page_height=3.0, shadow=False)
+    paper = Paper(sample_pdf, pages=2, dpi=72, page_height=3.0, shadow=False, border=False)
     assert paper.page_count == 2
-    # Without shadow, each page_group has exactly 1 child (the ImageMobject)
     for pg in paper.page_groups:
         assert len(pg.submobjects) == 1
+
+
+def test_paper_with_border_no_shadow(sample_pdf) -> None:
+    paper = Paper(sample_pdf, pages=2, dpi=72, page_height=3.0, shadow=False, border=True)
+    assert paper.page_count == 2
+    # image + border rect = 2 children
+    for pg in paper.page_groups:
+        assert len(pg.submobjects) == 2
+
+
+def test_paper_with_shadow_and_border(sample_pdf) -> None:
+    paper = Paper(sample_pdf, pages=2, dpi=72, page_height=3.0, shadow=True, border=True)
+    # shadow rect + image + border rect = 3 children
+    for pg in paper.page_groups:
+        assert len(pg.submobjects) == 3
+
+
+def test_dismiss_is_show_subclass(sample_pdf) -> None:
+    paper = Paper(sample_pdf, pages=2, dpi=72, page_height=3.0)
+    anim = DismissPaper(paper, direction="UP")
+    assert isinstance(anim, ShowPaper)
