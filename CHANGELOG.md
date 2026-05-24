@@ -6,6 +6,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-24
+
+### Changed
+
+- Highlight Pygments word operators in the Darcula code style.
+
 ## [0.2.0] - 2026-05-24
 
 ### Added
