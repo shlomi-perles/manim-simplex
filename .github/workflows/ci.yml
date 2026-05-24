@@ -29,6 +29,8 @@ jobs:
     - run: uv run ruff format --check .
     - run: uv run basedpyright
     - run: uv run pytest -q
+    - run: uv build
+    - run: uvx twine check dist/*
     - name: Plugin import smoke
       run: uv run python -c "import simplex.plugin; simplex.plugin.activate(); print('ok')"
     - name: Plugin discovery smoke

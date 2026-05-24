@@ -6,6 +6,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-24
+
 ### Added
 
 - `TexPage` mobject — fixed-width minipage helper. Width is configurable
@@ -110,7 +112,3 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `simplex.engine.transforms` module (split — see Changed).
 - `UserWarning` on the first bare `BaseSlide.next_slide()` call. Auto-
   promotion stays (named after the class), just silently.
-
-## [0.2.0] - 2025-05
-
-Initial release of the Phase-3 three-repo split. See README.

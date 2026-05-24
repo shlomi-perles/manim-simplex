@@ -1,64 +1,95 @@
-[project]
-name = "manim-simplex"
-version = "0.2.0"
-description = "Manim plugin: theme tokens, mobjects, slide hierarchy, deck manifest schema."
-readme = "README.md"
-requires-python = ">=3.13"
-license = { text = "MIT" }
-authors = [{ name = "Shlomi Perles" }]
-keywords = [
-    "manim",
-    "manim-slides",
-    "animation",
-    "presentation",
-    "lecture",
-    "education",
-    "math",
-    "computer-science",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Education",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3 :: Only",
-    "Topic :: Education",
-    "Topic :: Multimedia :: Graphics",
-    "Topic :: Multimedia :: Video",
-    "Topic :: Scientific/Engineering :: Visualization",
-    "Typing :: Typed",
-]
-dependencies = [
-    "manim>=0.20.1",
-    "manim-slides>=5.1.7",
-    "pydantic>=2.7",
-    "pygments>=2.18",
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "syrupy>=4.6",
+  "ruff>=0.6",
+  "basedpyright>=1.13",
+  "pre-commit>=3.7",
 ]
 
-[project.urls]
-Homepage = "https://github.com/shlomi-perles/manim-simplex"
-Repository = "https://github.com/shlomi-perles/manim-simplex"
-Issues = "https://github.com/shlomi-perles/manim-simplex/issues"
-Changelog = "https://github.com/shlomi-perles/manim-simplex/blob/main/CHANGELOG.md"
+[project]
+authors = [{name = "Shlomi Perles"}]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Education",
+  "Topic :: Multimedia :: Graphics",
+  "Topic :: Multimedia :: Video",
+  "Topic :: Scientific/Engineering :: Visualization",
+  "Typing :: Typed",
+]
+dependencies = [
+  "manim>=0.20.1",
+  "manim-slides>=5.1.7",
+  "pydantic>=2.7",
+  "pygments>=2.18",
+]
+description = "Manim plugin: theme tokens, mobjects, slide hierarchy, deck manifest schema."
+keywords = [
+  "manim",
+  "manim-slides",
+  "animation",
+  "presentation",
+  "lecture",
+  "education",
+  "math",
+  "computer-science",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+name = "manim-simplex"
+readme = "README.md"
+requires-python = ">=3.13"
+version = "0.2.0"
 
 [project.entry-points."manim.plugins"]
 simplex = "simplex.plugin:activate"
 
-[dependency-groups]
-dev = [
-    "pytest>=8",
-    "syrupy>=4.6",
-    "ruff>=0.6",
-    "basedpyright>=1.13",
-    "pre-commit>=3.7",
-]
+[project.urls]
+Changelog = "https://github.com/shlomi-perles/manim-simplex/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/shlomi-perles/manim-simplex"
+Issues = "https://github.com/shlomi-perles/manim-simplex/issues"
+Repository = "https://github.com/shlomi-perles/manim-simplex"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.basedpyright]
+include = ["src", "tests"]
+pythonVersion = "3.13"
+# Manim's type stubs in 0.20.x are incomplete: VGroup(...) widens to
+# `Group | Unknown`, Animation subclasses' `__init__` deliberately differs
+# from the inherited `__new__`, color constants are `ManimColor` instances
+# typed as `str`. Demote these categories to warnings rather than rewriting
+# upstream's stubs in this plugin. Tracked for cleanup as stubs improve.
+reportArgumentType = "warning"
+reportAssignmentType = "warning"
+reportInconsistentConstructor = "warning"
+reportMissingTypeStubs = false
+# Tests deliberately exercise private helpers (e.g. `_resolve_section_type`,
+# `_interpret_delay`) to keep the public surface small while still
+# covering edge cases.
+reportPrivateUsage = false
+reportReturnType = "warning"
+reportUnknownArgumentType = false
+reportUnknownLambdaType = "warning"
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+typeCheckingMode = "strict"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.claude",
+  "/.github",
+  "/media",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/simplex"]
@@ -66,29 +97,6 @@ packages = ["src/simplex"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/simplex/py.typed" = "simplex/py.typed"
 
-[tool.basedpyright]
-include = ["src", "tests"]
-pythonVersion = "3.13"
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportUnknownMemberType = false
-reportUnknownVariableType = false
-reportUnknownArgumentType = false
-# Manim's type stubs in 0.20.x are incomplete: VGroup(...) widens to
-# `Group | Unknown`, Animation subclasses' `__init__` deliberately differs
-# from the inherited `__new__`, color constants are `ManimColor` instances
-# typed as `str`. Demote these categories to warnings rather than rewriting
-# upstream's stubs in this plugin. Tracked for cleanup as stubs improve.
-reportArgumentType = "warning"
-reportReturnType = "warning"
-reportAssignmentType = "warning"
-reportInconsistentConstructor = "warning"
-reportUnknownLambdaType = "warning"
-# Tests deliberately exercise private helpers (e.g. `_resolve_section_type`,
-# `_interpret_delay`) to keep the public surface small while still
-# covering edge cases.
-reportPrivateUsage = false
-
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 addopts = "-q"
+testpaths = ["tests"]
