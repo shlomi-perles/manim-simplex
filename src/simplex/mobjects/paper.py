@@ -35,7 +35,6 @@ from manim import (
     smooth,
 )
 from manim.utils.tex_file_writing import tex_hash
-from numpy.typing import NDArray
 
 logger = logging.getLogger("simplex.paper")
 
@@ -136,7 +135,7 @@ def _render_pages(
 # Direction parsing (shared by Paper and animation classes)
 # ---------------------------------------------------------------------------
 
-_DIRECTION_MAP: dict[str, NDArray] = {
+_DIRECTION_MAP: dict[str, np.ndarray] = {
     "dl": DOWN + LEFT,
     "dr": DOWN + RIGHT,
     "ul": UP + LEFT,
@@ -148,7 +147,7 @@ _DIRECTION_MAP: dict[str, NDArray] = {
 }
 
 
-def _parse_direction(direction: str | NDArray) -> NDArray:
+def _parse_direction(direction: str | np.ndarray) -> np.ndarray:
     if isinstance(direction, str):
         key = direction.lower().strip()
         if key in _DIRECTION_MAP:
@@ -203,12 +202,12 @@ class Paper(Group):
         dpi: int = _DEFAULT_DPI,
         page_height: float = _PAGE_HEIGHT,
         shadow: bool = True,
-        shadow_direction: str | NDArray = "DL",
+        shadow_direction: str | np.ndarray = "DL",
         shadow_opacity: float = _SHADOW_OPACITY,
         border: bool = True,
         border_color: str = _BORDER_COLOR,
         border_stroke_width: float = _BORDER_STROKE_WIDTH,
-        stack_direction: str | NDArray = "DL",
+        stack_direction: str | np.ndarray = "DL",
         stack_offset: float | None = None,
         timeout: int = _DEFAULT_TIMEOUT,
         **kwargs: Any,
@@ -268,9 +267,7 @@ class Paper(Group):
 
     # -- source resolution ---------------------------------------------------
 
-    def _resolve_source(
-        self, source: str | Path | tuple[Path | str, str], *, timeout: int
-    ) -> Path:
+    def _resolve_source(self, source: str | Path | tuple[Path | str, str], *, timeout: int) -> Path:
         if isinstance(source, tuple):
             bib_path, cite_key = source
             url = _resolve_bibtex_source(Path(bib_path), cite_key)
@@ -345,7 +342,7 @@ class ShowPaper(AnimationGroup):
         self,
         paper: Paper,
         *,
-        direction: str | NDArray = "DOWN",
+        direction: str | np.ndarray = "DOWN",
         lag_ratio: float = 0.3,
         dismiss: bool = False,
         **kwargs: Any,
@@ -370,7 +367,7 @@ class DismissPaper(ShowPaper):
         self,
         paper: Paper,
         *,
-        direction: str | NDArray = "DOWN",
+        direction: str | np.ndarray = "DOWN",
         lag_ratio: float = 0.3,
         **kwargs: Any,
     ) -> None:
@@ -401,7 +398,7 @@ class PickPage(Animation):
         paper: Paper,
         page_index: int = 1,
         *,
-        slide_direction: str | NDArray = "RIGHT",
+        slide_direction: str | np.ndarray = "RIGHT",
         overshoot: float = 3.0,
         **kwargs: Any,
     ) -> None:
@@ -417,7 +414,7 @@ class PickPage(Animation):
         self._page = self._paper.get_page(self._page_index)
         self._start_pos = self._page.get_center().copy()
 
-        self._other_pages_start: list[NDArray] = []
+        self._other_pages_start: list[np.ndarray] = []
         for i, pg in enumerate(self._paper.page_groups):
             if i != self._page_index:
                 self._other_pages_start.append(pg.get_center().copy())
@@ -427,7 +424,7 @@ class PickPage(Animation):
         self._end_pos = self._paper._stack_dir * self._paper._stack_offset * 0
         self._midpoint = self._start_pos + self._slide_vec
 
-        self._other_pages_end: list[NDArray] = []
+        self._other_pages_end: list[np.ndarray] = []
         for i, _pg in enumerate(self._paper.page_groups[1:], start=1):
             self._other_pages_end.append(self._paper._stack_dir * self._paper._stack_offset * i)
 
