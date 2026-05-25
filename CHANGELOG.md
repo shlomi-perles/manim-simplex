@@ -6,6 +6,38 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-26
+
+### Added
+
+- `SimplexSolarizedLight` Pygments style — a new built-in light code style
+  living alongside `SimplexPycharm` in `simplex.theme.styles`.
+- `Theme.code_style` field — each theme preset now owns its Pygments style
+  class, so the active theme drives the code formatter style instead of a
+  hardcoded module-level default.
+- `register_style()` and `register_all_builtin_styles()` — generic Pygments
+  style registration helpers that replace the single-purpose
+  `register_darcula()`.
+- Code token colors are now emitted as `--simplex-code-*` CSS custom
+  properties via `render_web_css()`, so the web layer can pick up the
+  active style's palette.
+
+### Changed
+
+- **BREAKING:** `DarculaStyle` is renamed to `SimplexPycharm` and moved
+  into the `simplex.theme.styles` subpackage. Import sites change from
+  `from simplex.theme.pygments_style import DarculaStyle` to
+  `from simplex.theme.styles import SimplexPycharm`.
+- **BREAKING:** `register_darcula()` is removed in favour of
+  `register_style(...)` and `register_all_builtin_styles()`.
+- `engine/code.py` resolves the formatter style from the active theme
+  rather than hardcoding a single style class.
+
+### Removed
+
+- Module-level global color variables from
+  `simplex.theme.pygments_style` — colors are now scoped per style class.
+
 ## [0.2.3] - 2026-05-25
 
 ### Added
