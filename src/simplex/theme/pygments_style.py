@@ -4,9 +4,48 @@
 
 import sys
 import types
+from typing import ClassVar
 
 from pygments.style import Style
-from pygments.token import Comment, Generic, Keyword, Literal, Name, Operator
+from pygments.token import (
+    Comment,
+    Error,
+    Generic,
+    Keyword,
+    Literal,
+    Name,
+    Operator,
+    Punctuation,
+    Text,
+)
+
+_BACKGROUND = "#111111"
+_SELECTION = "#333333"
+_FOREGROUND = "#A9B7C6"
+
+_RED = "#BC3F3C"
+_ERROR_RED = "#960050"
+
+_GRAY = "#808080"
+_GRAY_ATTRIBUTE = "#BABABA"
+
+_GREEN = "#6A8759"
+_GREEN_DOC = "#629755"
+_GREEN_INSERTED = "#A5C261"
+_EMERALD = "#88BE05"
+
+_GOLD = "#F1C829"
+_YELLOW = "#BBB529"
+
+_ORANGE = "#CC7832"
+
+_AQUA = "#6897BB"
+_BLUE_BUILTIN = "#8888C6"
+_BLUE_ENTITY = "#6D9CBE"
+
+_PURPLE = "#9876AA"
+
+_TAG = "#E8BF6A"
 
 
 def register_darcula(style_name: str = "darcula") -> None:
@@ -31,49 +70,59 @@ def register_darcula(style_name: str = "darcula") -> None:
 class DarculaStyle(Style):
     """Pygments scheme inspired by JetBrains Darcula, ported from Simplex."""
 
-    background_color = "#111111"
-    highlight_color = "#333333"
+    background_color = _BACKGROUND
+    highlight_color = _SELECTION
 
-    styles = {  # noqa: RUF012 -- pygments declares `styles` as a class attribute.
-        Comment.Multiline: "#808080",
-        Comment.Preproc: "#808080",
-        Comment.Single: "#808080",
-        Comment.Special: "bold #808080",
-        Comment: "#808080",
-        Generic.Deleted: "#BC3F3C",
-        Generic.Emph: "italic #A9B7C6",
-        Generic.Heading: "bold #A9B7C6",
-        Generic.Inserted: "#A5C261",
-        Generic.Output: "#A9B7C6",
-        Generic.Prompt: "#808080",
-        Generic.Strong: "bold #A9B7C6",
-        Generic.Subheading: "bold #A9B7C6",
-        Generic.Traceback: "#BC3F3C",
-        Keyword.Constant: "#CC7832",
-        Keyword.Declaration: "#CC7832",
-        Keyword.Namespace: "#CC7832",
-        Keyword.Pseudo: "#CC7832",
-        Keyword.Reserved: "#CC7832",
-        Keyword.Type: "#CC7832",
-        Keyword: "#CC7832 bold",
-        Literal.Number: "#6897BB",
-        Literal.String: "#6A8759",
-        Literal.String.Doc: "#629755",
-        Name.Attribute: "#BABABA",
-        Name.Builtin.Pseudo: "#9876AA",
-        Name.Builtin: "#8888C6",
-        Name.Class: "#FFC66D bold",
-        Name.Constant: "#9876AA",
-        Name.Decorator: "#BBB529",
-        Name.Entity: "#6D9CBE",
-        Name.Exception: "#FFC66D bold",
-        Name.Function: "#FFC66D bold",
-        Name.Label: "#A9B7C6 bold",
-        Name.Namespace: "#A9B7C6",
-        Name.Tag: "#E8BF6A",
-        Name.Variable.Class: "#9876AA",
-        Name.Variable.Global: "#9876AA",
-        Name.Variable.Instance: "#9876AA",
-        Name.Variable: "#A9B7C6",
-        Operator.Word: "#CC7832 bold",
+    styles: ClassVar[dict[object, str]] = {
+        Text: _FOREGROUND,
+        Error: _ERROR_RED,
+        Comment: _GRAY,
+        Comment.Multiline: _GRAY,
+        Comment.Preproc: _GRAY,
+        Comment.Single: _GRAY,
+        Comment.Special: _GRAY,
+        Keyword: _ORANGE,
+        Keyword.Constant: _ORANGE,
+        Keyword.Declaration: _ORANGE,
+        Keyword.Namespace: _ORANGE,
+        Keyword.Pseudo: _ORANGE,
+        Keyword.Reserved: _ORANGE,
+        Keyword.Type: _ORANGE,
+        Operator: _FOREGROUND,
+        Operator.Word: _ORANGE,
+        Punctuation: _FOREGROUND,
+        Name: _FOREGROUND,
+        Name.Attribute: _GRAY_ATTRIBUTE,
+        Name.Builtin: _BLUE_BUILTIN,
+        Name.Builtin.Pseudo: _PURPLE,
+        Name.Class: _GOLD,
+        Name.Constant: _PURPLE,
+        Name.Decorator: _YELLOW,
+        Name.Entity: _BLUE_ENTITY,
+        Name.Exception: _GOLD,
+        Name.Function: _GOLD,
+        Name.Label: _FOREGROUND,
+        Name.Namespace: _FOREGROUND,
+        Name.Other: _EMERALD,
+        Name.Tag: _TAG,
+        Name.Variable: _FOREGROUND,
+        Name.Variable.Class: _PURPLE,
+        Name.Variable.Global: _PURPLE,
+        Name.Variable.Instance: _PURPLE,
+        Literal: _AQUA,
+        Literal.Date: _GREEN,
+        Literal.Number: _AQUA,
+        Literal.String: _GREEN,
+        Literal.String.Doc: _GREEN_DOC,
+        Literal.String.Escape: _AQUA,
+        Generic: _GRAY,
+        Generic.Deleted: _RED,
+        Generic.Emph: f"italic {_FOREGROUND}",
+        Generic.Heading: _FOREGROUND,
+        Generic.Inserted: _GREEN_INSERTED,
+        Generic.Output: _FOREGROUND,
+        Generic.Prompt: _GRAY,
+        Generic.Strong: f"bold {_FOREGROUND}",
+        Generic.Subheading: _FOREGROUND,
+        Generic.Traceback: _RED,
     }
