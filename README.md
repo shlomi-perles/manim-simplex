@@ -3,14 +3,14 @@
 [![PyPI version](https://img.shields.io/pypi/v/manim-simplex.svg)](https://pypi.org/project/manim-simplex/)
 [![Python](https://img.shields.io/pypi/pyversions/manim-simplex.svg)](https://pypi.org/project/manim-simplex/)
 [![CI](https://github.com/shlomi-perles/manim-simplex/actions/workflows/ci.yml/badge.svg)](https://github.com/shlomi-perles/manim-simplex/actions/workflows/ci.yml)
-[![License](https://img.shields.io/pypi/l/manim-simplex.svg)](https://github.com/shlomi-perles/manim-simplex/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/shlomi-perles/manim-simplex.svg)](https://github.com/shlomi-perles/manim-simplex/blob/main/LICENSE)
 
 `manim-simplex` is the Manim plugin layer for Simplex: theme tokens,
 slide bases, reusable mobjects, animation helpers, and the shared deck
 manifest schema used by the Simplex web builder.
 
-It is published as `manim-simplex` and exposes modules under the
-implicit namespace package `simplex`.
+It is published as `manim-simplex` and exposes the `simplex` Manim authoring
+API.
 
 ## Requirements
 
@@ -61,15 +61,14 @@ color, and enables section JSON output.
 ```python
 from manim import ORIGIN, MathTex, Write
 
-from simplex.slides import BaseSlide, make_chrome
-from simplex.theme import presets
+from simplex import BaseSlide, make_chrome, presets
 
 
 class HelloSlide(BaseSlide):
     def setup(self) -> None:
         super().setup()
         chrome = make_chrome(
-            presets.DASTIMATOR_DARK,
+            presets.SIMPLEX_DARK,
             self.region,
             header="Hello, Simplex",
         )
@@ -109,10 +108,10 @@ uv run manim-slides present HelloSlide
 | `simplex.plugin` | `activate()` entry point used by Manim. |
 | `simplex.slides` | `BaseSlide`, `OutlineScene`, `OutlinePart`, `Chrome`, `make_chrome`. |
 | `simplex.engine` | `Region`, `Remove`, `clear_scene`, `exit_for`, `register_exit`, `set_exit_animation`, `HighlightResult`, `apply_theme_defaults`. |
-| `simplex.mobjects` | `Node`, `Edge`, `ArrayMob`, `ArrayEntry`, `ArrayPointer`, `OutlineProgressBar`. |
+| `simplex.mobjects` | `Node`, `Edge`, `ArrayMob`, `ArrayEntry`, `ArrayPointer`, `OutlineProgressBar`, `Paper`, `ShowPaper`, `DismissPaper`, `PickPage`. |
 | `simplex.theme` | `Theme`, `Palette`, `Typography`, `Spacing`, `Motion`, `LatexProfile`, `WebPalette`, `active_theme`, `get_active_theme`, `presets`, `render_web_css`. |
 | `simplex.section` | `SimplexSectionType`, the section strings written into Manim section JSON. |
-| `simplex.manifest` | `DeckManifest`, `MainSlide`, `Subsection`, the Pydantic schema shared with `simplex-py`. |
+| `simplex.manifest` | `DeckManifest`, `MainSlide`, `Subsection`, the Pydantic schema shared with `simplex-web`. |
 
 Additional focused helpers live in submodules such as
 `simplex.engine.glyph_map`, `simplex.engine.code`,
@@ -122,7 +121,7 @@ Additional focused helpers live in submodules such as
 ## Slide Hierarchy
 
 `BaseSlide.next_slide` writes Simplex section types into Manim's native
-section JSON. The `simplex-py` web builder later reconciles those
+section JSON. The `simplex-web` builder later reconciles those
 sections with manim-slides metadata.
 
 ```python
@@ -145,15 +144,14 @@ web portal.
 ```python
 from manim import Tex
 
-from simplex.theme import presets
-from simplex.theme.context import active_theme
+from simplex import active_theme, presets
 
 
 with active_theme(presets.ACADEMIC_LIGHT):
     label = Tex("This Tex uses the academic light palette.")
 ```
 
-Available presets include `DASTIMATOR_DARK` and `ACADEMIC_LIGHT`.
+Available presets include `SIMPLEX_DARK` and `ACADEMIC_LIGHT`.
 
 ## Outline Slides
 
@@ -163,8 +161,7 @@ slide with progress indicators.
 ```python
 from manim import Circle, Square, Tex
 
-from simplex.engine.text import Caption
-from simplex.slides import OutlinePart, OutlineScene
+from simplex import Caption, OutlinePart, OutlineScene
 
 
 class Outline(OutlineScene):
@@ -193,21 +190,22 @@ uv run manim-slides render examples/outline_slide.py OutlineDemo
 The examples directory has its own `manim.cfg`, so the Simplex plugin is
 enabled when commands are run from the repository root.
 
-## Relationship To `simplex-py`
+## Relationship To `simplex-web`
 
 Simplex is split into two PyPI distributions:
 
 | Distribution | Import namespace | Purpose |
 | --- | --- | --- |
 | `manim-simplex` | `simplex.*` | Manim plugin, slide bases, theme, mobjects, manifest schema. |
-| `simplex-py` | `simplex.*` | CLI, deck discovery, render orchestration, and static web portal. |
+| `simplex-web` | `simplex.*` | CLI, deck discovery, render orchestration, and static web portal. |
 
-Both wheels intentionally contribute to the same PEP 420 namespace. This
-package does not ship `simplex/__init__.py`; neither should downstream
-extensions that want to share the namespace.
+`manim-simplex` provides a lightweight `simplex.__init__` facade so deck
+authors can write imports such as `from simplex import BaseSlide, Caption`.
+The facade extends the package path for `simplex-web`, so `simplex.web`,
+`simplex.deck`, and the CLI-side modules continue to compose with it.
 
 Install only `manim-simplex` if you want to render scenes and slides.
-Install `simplex-py` later when you want the full lecture portal and CLI.
+Install `simplex-web` later when you want the full lecture portal and CLI.
 
 ## Development
 
@@ -244,7 +242,7 @@ Publishing. To release a new version:
 1. Update `version` in `pyproject.toml`.
 2. Move changelog entries under a dated release heading.
 3. Commit the release prep.
-4. Push an annotated tag such as `v0.2.1`.
+4. Push an annotated tag such as `v0.2.3`.
 
 The `Publish to PyPI` workflow builds an sdist and wheel, checks both
 with Twine, uploads them as a GitHub artifact, and publishes to PyPI via

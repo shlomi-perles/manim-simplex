@@ -1,6 +1,6 @@
 # tests/theme/
 
-Tests for `simplex.theme`: frozen-token invariants, preset values seeded from Dastimator, ContextVar push/pop.
+Tests for `simplex.theme`: frozen-token invariants, preset values seeded from Simplex, ContextVar push/pop.
 
 ## Don't
 

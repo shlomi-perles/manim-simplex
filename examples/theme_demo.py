@@ -8,13 +8,12 @@ proof).
 
 from manim import FadeIn, Scene, Tex
 
-from simplex.theme import presets
-from simplex.theme.context import active_theme
+from simplex import active_theme, presets
 
 
 class ThemeDemo(Scene):
     def construct(self) -> None:
-        with active_theme(presets.DASTIMATOR_DARK):
+        with active_theme(presets.SIMPLEX_DARK):
             dark_label = Tex("dark theme")
         with active_theme(presets.ACADEMIC_LIGHT):
             light_label = Tex("light theme")

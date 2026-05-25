@@ -1,4 +1,4 @@
-"""Graph mobjects (``Node``, ``Edge``) ported from Dastimator.
+"""Graph mobjects (``Node``, ``Edge``) ported from Simplex.
 
 These are vanilla ``VMobject`` subclasses; they pull colors / strokes
 from the active Simplex theme at construction time and register a

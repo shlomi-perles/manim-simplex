@@ -20,10 +20,10 @@ def active_theme(theme: Theme) -> Generator[Theme]:
 
 
 def get_active_theme() -> Theme:
-    """Return the active theme, falling back to DASTIMATOR_DARK."""
+    """Return the active theme, falling back to SIMPLEX_DARK."""
     theme = _active.get()
     if theme is None:
-        from simplex.theme.presets import DASTIMATOR_DARK
+        from simplex.theme.presets import SIMPLEX_DARK
 
-        return DASTIMATOR_DARK
+        return SIMPLEX_DARK
     return theme

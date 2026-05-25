@@ -29,7 +29,7 @@ def register_darcula(style_name: str = "darcula") -> None:
 
 
 class DarculaStyle(Style):
-    """Pygments scheme inspired by JetBrains Darcula, ported from Dastimator."""
+    """Pygments scheme inspired by JetBrains Darcula, ported from Simplex."""
 
     background_color = "#111111"
     highlight_color = "#333333"

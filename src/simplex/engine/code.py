@@ -6,7 +6,7 @@ Wraps :class:`manim.Code` (the Pygments-backed listing) and exposes its
 ``inline_math_in_code`` / ``code_with_math`` rewrite ``$...$`` regions in
 each line into rendered ``MathTex`` glyphs after Pygments has already
 highlighted the surrounding code. This is the modern replacement for the
-old dastimator ``compile_code_tex`` helper -- it relies on Manim
+old Simplex ``compile_code_tex`` helper -- it relies on Manim
 0.20.x's ``Code.code_lines`` glyph order and reflows each line so the
 math width drives the final layout.
 """

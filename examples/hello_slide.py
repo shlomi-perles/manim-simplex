@@ -13,14 +13,13 @@ Demonstrates:
 
 from manim import ORIGIN, MathTex, Write
 
-from simplex.slides import BaseSlide, make_chrome
-from simplex.theme import presets
+from simplex import BaseSlide, make_chrome, presets
 
 
 class HelloSlide(BaseSlide):
     def setup(self) -> None:
         super().setup()
-        chrome = make_chrome(presets.DASTIMATOR_DARK, self.region, header="Hello, Simplex")
+        chrome = make_chrome(presets.SIMPLEX_DARK, self.region, header="Hello, Simplex")
         self.add_to_canvas(**chrome.mobjects)
         self.region = chrome.body_region
 

@@ -1,4 +1,4 @@
-"""ArrayMob, ArrayEntry, ArrayPointer -- ported and cleaned from Dastimator.
+"""ArrayMob, ArrayEntry, ArrayPointer -- ported and cleaned from Simplex.
 
 Vanilla Manim mobjects. No factories; no wrapping. Authors construct directly::
 

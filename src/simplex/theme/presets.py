@@ -1,4 +1,4 @@
-"""Preset Theme instances seeded from Dastimator's consts.py."""
+"""Preset Simplex theme instances."""
 
 from simplex.theme.tokens import LatexProfile, Palette, Theme, Typography, WebPalette
 
@@ -13,8 +13,8 @@ _COMPACT_DISPLAY_PREAMBLE = (
     "\n"
 )
 
-DASTIMATOR_DARK: Theme = Theme(
-    name="dastimator_dark",
+SIMPLEX_DARK: Theme = Theme(
+    name="simplex_dark",
     palette=Palette(
         background="#242424",
         font="#FFFFFF",
@@ -74,7 +74,7 @@ ACADEMIC_LIGHT: Theme = Theme(
 )
 
 PRESETS: dict[str, Theme] = {
-    DASTIMATOR_DARK.name: DASTIMATOR_DARK,
+    SIMPLEX_DARK.name: SIMPLEX_DARK,
     ACADEMIC_LIGHT.name: ACADEMIC_LIGHT,
 }
 

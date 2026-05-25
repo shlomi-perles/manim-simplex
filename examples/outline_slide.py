@@ -2,8 +2,7 @@
 
 from manim import Circle, Square, Triangle
 
-from simplex.engine.text import Caption, TexPage
-from simplex.slides import OutlinePart, OutlineScene
+from simplex import Caption, OutlinePart, OutlineScene, TexPage
 
 
 class OutlineDemo(OutlineScene):

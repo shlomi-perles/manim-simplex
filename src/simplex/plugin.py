@@ -25,7 +25,7 @@ Theme selection priority:
 2. ``SIMPLEX_THEME`` environment variable -- the deck.toml ``theme`` name
    propagated across the ``manim-slides render`` subprocess by
    ``simplex.render.runner``.
-3. ``DASTIMATOR_DARK`` -- the package default.
+3. ``SIMPLEX_DARK`` -- the package default.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ import os
 def _resolve_theme():  # type: ignore[no-untyped-def]
     """Pick the theme that should drive Manim defaults for this process."""
     from simplex.theme.context import _active
-    from simplex.theme.presets import DASTIMATOR_DARK, PRESETS
+    from simplex.theme.presets import PRESETS, SIMPLEX_DARK
 
     # In-process context (a parent that did ``with active_theme(t): ...``)
     # wins; env-var fallback handles cross-process propagation.
@@ -45,7 +45,7 @@ def _resolve_theme():  # type: ignore[no-untyped-def]
     env_name = os.environ.get("SIMPLEX_THEME")
     if env_name and env_name in PRESETS:
         return PRESETS[env_name]
-    return DASTIMATOR_DARK
+    return SIMPLEX_DARK
 
 
 def activate() -> None:

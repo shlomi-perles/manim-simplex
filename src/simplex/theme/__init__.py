@@ -2,6 +2,7 @@
 
 from simplex.theme import presets
 from simplex.theme.context import active_theme, get_active_theme
+from simplex.theme.presets import SIMPLEX_DARK
 from simplex.theme.tokens import (
     LatexProfile,
     Motion,
@@ -14,6 +15,7 @@ from simplex.theme.tokens import (
 from simplex.theme.web_css import render_web_css
 
 __all__ = [
+    "SIMPLEX_DARK",
     "LatexProfile",
     "Motion",
     "Palette",

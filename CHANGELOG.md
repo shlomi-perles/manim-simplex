@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-25
+
+### Added
+
+- Top-level authoring imports such as `from simplex import BaseSlide, Caption`.
+
+### Changed
+
+- Rename the default theme from `dastimator_dark` / `DASTIMATOR_DARK` to
+  `simplex_dark` / `SIMPLEX_DARK`.
+
 ## [0.2.1] - 2026-05-24
 
 ### Changed
@@ -111,7 +122,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - ``make_chrome(..., page=…)`` parameter and the corresponding ``page``
   entry in ``Chrome.mobjects``. Slide numbering moves to the web layer.
 - ``LatexProfile.environments["definition"]`` entries from
-  ``DASTIMATOR_DARK`` and ``ACADEMIC_LIGHT``: ``TexPage`` is now the
+  ``SIMPLEX_DARK`` and ``ACADEMIC_LIGHT``: ``TexPage`` is now the
   single owner of the ``{minipage}{<width>cm}`` literal.
 - `simplex.engine.section_types` module (replaced by `simplex.section`).
 - `simplex.slides.components` subpackage (replaced by `simplex.mobjects`).
