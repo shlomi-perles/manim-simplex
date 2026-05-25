@@ -1,5 +1,7 @@
 """Preset Simplex theme instances."""
 
+from simplex.theme.styles.simplex_pycharm import SimplexPycharm
+from simplex.theme.styles.simplex_solarized_light import SimplexSolarizedLight
 from simplex.theme.tokens import LatexProfile, Palette, Theme, Typography, WebPalette
 
 _COMPACT_DISPLAY_PREAMBLE = (
@@ -41,6 +43,7 @@ SIMPLEX_DARK: Theme = Theme(
         font_family_mono="'JetBrains Mono', 'Fira Code', monospace",
         font_size_base="1rem",
     ),
+    code_style=SimplexPycharm,
 )
 
 ACADEMIC_LIGHT: Theme = Theme(
@@ -71,6 +74,7 @@ ACADEMIC_LIGHT: Theme = Theme(
         font_family_mono="'JetBrains Mono', 'Fira Code', monospace",
         font_size_base="1rem",
     ),
+    code_style=SimplexSolarizedLight,
 )
 
 PRESETS: dict[str, Theme] = {

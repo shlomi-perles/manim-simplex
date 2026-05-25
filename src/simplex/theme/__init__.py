@@ -3,6 +3,12 @@
 from simplex.theme import presets
 from simplex.theme.context import active_theme, get_active_theme
 from simplex.theme.presets import SIMPLEX_DARK
+from simplex.theme.pygments_style import (
+    SimplexPycharm,
+    SimplexSolarizedLight,
+    register_all_builtin_styles,
+    register_style,
+)
 from simplex.theme.tokens import (
     LatexProfile,
     Motion,
@@ -19,6 +25,8 @@ __all__ = [
     "LatexProfile",
     "Motion",
     "Palette",
+    "SimplexPycharm",
+    "SimplexSolarizedLight",
     "Spacing",
     "Theme",
     "Typography",
@@ -26,5 +34,7 @@ __all__ = [
     "active_theme",
     "get_active_theme",
     "presets",
+    "register_all_builtin_styles",
+    "register_style",
     "render_web_css",
 ]
