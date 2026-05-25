@@ -1,4 +1,4 @@
-"""Code helpers: Darcula Pygments style, code_block factory, highlight + explain.
+"""Code helpers: themed Pygments style, code_block factory, highlight + explain.
 
 Wraps :class:`manim.Code` (the Pygments-backed listing) and exposes its
 ``code_lines`` attribute through small animation helpers.
@@ -37,9 +37,9 @@ from manim import (
 )
 
 from simplex.theme.context import get_active_theme
-from simplex.theme.pygments_style import DarculaStyle, register_darcula
+from simplex.theme.pygments_style import register_style
 
-__all__ = ["DarculaStyle", "HighlightResult", "register_darcula"]
+__all__ = ["HighlightResult"]
 
 _INLINE_MATH_PATTERN = re.compile(r"\$([^$\n]+)\$")
 
@@ -62,31 +62,42 @@ class HighlightResult:
             yield self.indicate
 
 
+def _resolve_formatter_style(formatter_style: str | None) -> str:
+    """Return the Pygments style name, registering the theme's code style if needed."""
+    theme = get_active_theme()
+    if formatter_style is not None:
+        return formatter_style
+    style_cls = theme.code_style
+    register_style(style_cls)
+    from simplex.theme.pygments_style import _class_name_to_style_name
+
+    return _class_name_to_style_name(style_cls.__name__)
+
+
 def code_block(
     code: str,
     *,
     language: str = "python",
     background: str = "window",
-    formatter_style: str = "darcula",
+    formatter_style: str | None = None,
     paragraph_config: dict[str, Any] | None = None,
     background_config: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> Code:
-    """Build a ``manim.Code`` with Darcula highlighting and the theme mono font.
+    """Build a ``manim.Code`` with the active theme's code style and mono font.
 
     Authors get vanilla ``manim.Code`` back -- everything Manim does to
     that class still works (``.code_lines``, ``.background``,
     ``.scale_to_fit_width``).
     """
-    if formatter_style == "darcula":
-        register_darcula(formatter_style)
+    resolved = _resolve_formatter_style(formatter_style)
     theme = get_active_theme()
     paragraph_kwargs: dict[str, Any] = {"font": theme.typography.mono_family}
     paragraph_kwargs.update(paragraph_config or {})
     return Code(
         code_string=code,
         language=language,
-        formatter_style=formatter_style,
+        formatter_style=resolved,
         background=background,  # type: ignore[arg-type]
         paragraph_config=paragraph_kwargs,
         background_config=background_config,
@@ -177,7 +188,7 @@ def code_with_math(
     language: str = "python",
     bold_math: bool = False,
     math_color: str | None = None,
-    formatter_style: str = "darcula",
+    formatter_style: str | None = None,
     **kwargs: Any,
 ) -> Code:
     """``code_block`` + inline LaTeX for any ``$...$`` regions in ``code``.

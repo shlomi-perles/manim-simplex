@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+from pygments.style import Style
 
 
 class Palette(BaseModel):
@@ -95,7 +96,7 @@ class WebPalette(BaseModel):
 
 
 class Theme(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
     name: str
     palette: Palette
     typography: Typography = Field(default_factory=Typography)
@@ -103,3 +104,11 @@ class Theme(BaseModel):
     motion: Motion = Field(default_factory=Motion)
     latex: LatexProfile = Field(default_factory=LatexProfile)
     web_palette: WebPalette = Field(default_factory=WebPalette)
+    code_style: type[Style] = Field(default=None)  # type: ignore[assignment]
+
+    def __init__(self, **data: Any) -> None:
+        if data.get("code_style") is None:
+            from simplex.theme.styles.simplex_pycharm import SimplexPycharm
+
+            data["code_style"] = SimplexPycharm
+        super().__init__(**data)

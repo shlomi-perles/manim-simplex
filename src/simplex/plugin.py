@@ -58,14 +58,14 @@ def activate() -> None:
     import manim
 
     from simplex.engine.defaults import apply_theme_defaults
-    from simplex.theme.pygments_style import register_darcula
+    from simplex.theme.pygments_style import register_all_builtin_styles
 
     theme = _resolve_theme()
     apply_theme_defaults(theme)
     manim.config.tex_template = theme.latex.as_tex_template()
     manim.config.background_color = theme.palette.background
     manim.config.save_sections = True
-    register_darcula()
+    register_all_builtin_styles()
 
 
 # Manim's plugin loader imports this module via ``entry_point.load()`` but

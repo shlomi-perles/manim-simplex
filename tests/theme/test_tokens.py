@@ -5,6 +5,8 @@ from pydantic import ValidationError
 
 from simplex.theme import presets
 from simplex.theme.context import active_theme, get_active_theme
+from simplex.theme.styles.simplex_pycharm import SimplexPycharm
+from simplex.theme.styles.simplex_solarized_light import SimplexSolarizedLight
 
 
 def test_simplex_palette_background() -> None:
@@ -50,3 +52,32 @@ def test_context_push_pop_restores_default() -> None:
 def test_presets_get_unknown_raises() -> None:
     with pytest.raises(KeyError):
         presets.get("nope")
+
+
+def test_simplex_dark_uses_simplex_pycharm_code_style() -> None:
+    assert presets.SIMPLEX_DARK.code_style is SimplexPycharm
+
+
+def test_academic_light_uses_solarized_light_code_style() -> None:
+    assert presets.ACADEMIC_LIGHT.code_style is SimplexSolarizedLight
+
+
+def test_code_style_defaults_to_simplex_pycharm() -> None:
+    from simplex.theme.tokens import Palette, Theme
+
+    theme = Theme(
+        name="test",
+        palette=Palette(
+            background="#000",
+            font="#fff",
+            accent="#fff",
+            vertex="#fff",
+            vertex_stroke="#fff",
+            edge="#fff",
+            weight="#fff",
+            visited="#fff",
+            label="#fff",
+            distance="#fff",
+        ),
+    )
+    assert theme.code_style is SimplexPycharm

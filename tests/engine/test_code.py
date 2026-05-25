@@ -1,33 +1,49 @@
-"""Darcula registration + HighlightResult shape + inline math helpers."""
+"""Style registration + HighlightResult shape + inline math helpers."""
 
 import pytest
 
 pytest.importorskip("pygments")
 
 from simplex.engine.code import (
-    DarculaStyle,
     HighlightResult,
     _glyph_positions,
     _glyph_span,
-    register_darcula,
+)
+from simplex.theme.pygments_style import (
+    SimplexPycharm,
+    SimplexSolarizedLight,
+    register_all_builtin_styles,
+    register_style,
 )
 
 
-def test_register_darcula_adds_to_style_map() -> None:
+def test_register_style_adds_to_style_map() -> None:
     import pygments.styles
 
-    register_darcula()
-    assert "darcula" in pygments.styles.STYLE_MAP
+    register_style(SimplexPycharm)
+    assert "simplex_pycharm" in pygments.styles.STYLE_MAP
 
 
-def test_register_darcula_is_idempotent() -> None:
-    register_darcula()
-    register_darcula()
-    register_darcula()
+def test_register_style_is_idempotent() -> None:
+    register_style(SimplexPycharm)
+    register_style(SimplexPycharm)
+    register_style(SimplexPycharm)
 
 
-def test_darcula_style_has_expected_background() -> None:
-    assert DarculaStyle.background_color == "#111111"
+def test_register_all_registers_both_styles() -> None:
+    import pygments.styles
+
+    register_all_builtin_styles()
+    assert "simplex_pycharm" in pygments.styles.STYLE_MAP
+    assert "simplex_solarized_light" in pygments.styles.STYLE_MAP
+
+
+def test_simplex_pycharm_has_expected_background() -> None:
+    assert SimplexPycharm.background_color == "#111111"
+
+
+def test_simplex_solarized_light_has_expected_background() -> None:
+    assert SimplexSolarizedLight.background_color == "#fffce4"
 
 
 def test_highlight_result_iterates_fade_only_when_indicate_is_none() -> None:
